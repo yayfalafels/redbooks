@@ -389,16 +389,16 @@ Every design doc traces its decisions back to the requirements and forward to th
 
 | id    | seq | status   | design topic                             |
 | ----- | --- | -------  | ---------------------------------------- |
-| 04.01 | 01  | open     | workflows                                |
-| 04.02 | 02  | open     | data flows                               |
-| 04.03 | 03  | open     | front end pages                          |
-| 04.04 | 04  | open     | homebudget data review                   |
-| 04.05 | 05  | pending  | data model                               |
-| 04.06 | 06  | pending  | accounts                                 |
-| 04.07 | 07  | pending  | transactions                             |
-| 04.19 | 08  | pending  | exchange rate api probe                  |
-| 04.08 | 09  | pending  | multi currency and forex                 |
-| 04.09 | 10  | pending  | financial statements                     |
+| 04.09 | 01  | open     | financial statements                     |
+| 04.04 | 02  | pending  | homebudget data review                   |
+| 04.01 | 03  | pending  | workflows                                |
+| 04.02 | 04  | pending  | data flows                               |
+| 04.03 | 05  | pending  | front end pages                          |
+| 04.05 | 06  | pending  | data model                               |
+| 04.06 | 07  | pending  | accounts                                 |
+| 04.07 | 08  | pending  | transactions                             |
+| 04.19 | 09  | pending  | exchange rate api probe                  |
+| 04.08 | 10  | pending  | multi currency and forex                 |
 | 04.10 | 11  | pending  | architecture                             |
 | 04.11 | 12  | pending  | tech stack                               |
 | 04.12 | 13  | pending  | repo layout                              |

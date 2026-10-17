@@ -41,6 +41,7 @@ This document records how each account books its transactions, how the two diffe
 - **fs category translation**: `financial-statements/docs/releases/010/design/category-account-model-translation.md`
 - **homebudget workbook** and **financial statements workbook**: the legacy Google Sheets that mapped account `01` HomeBudget categories and accounts onto the financial statements, with their workbook ids in the gitignored `data/gsheets.json`
 - **financial statements design**: [financial-statements.md](financial-statements.md)
+- **data migration**: [data-migration.md](data-migration.md)
 - **homebudget wrapper**: [https://github.com/yayfalafels/homebudget](https://github.com/yayfalafels/homebudget)
 
 This document describes accounts by role. Committed docs and code show no real account names, account numbers or personal details, per LL.08 of the **lessons learned**. The HomeBudget data review's account mapping with real names lives in an uncommitted location next to the seed.
@@ -133,7 +134,7 @@ The release milestones plan a dedicated split purchase model and interface for t
 The HomeBudget data review, 04.04, settles each question against the full data. The **homebudget data review** records the answers.
 
 01. **account `01` history.** The source is the **account 01 database**. Its full migration runs after the release is validated, per [Seed, migration and balances](#seed-migration-and-balances). The review identifies the account `01` source and its record layout.
-02. **category model.** Both accounts map onto the statement lines of the **financial statements design**. The review records how account `02` maps, and the legacy workbook mapping that carries account `01`.
+02. **category model.** Both accounts map onto the statement lines of the **financial statements design**. The **data migration** records how account `02` maps, and the legacy workbook mapping that carries account `01`.
 03. **cost center timing.** On 8 of 41 dates the transfers in and the expenses booked differ. The review checks whether these are cross-day splits, refunds, or the 12 transfers out of the cost center.
 04. **transfers out of the cost center.** 12 transfers move amounts from the cost center to cash, card and deposit accounts. The review records what each represents, such as the non-expense part of a split or a refund, and how it maps to entries.
 05. **billing and stored-value accounts.** HomeBudget gives the bill and stored-value accounts a liability type. A stored-value card holds money the user owns, which is an asset under AR.01 and AR.08 of the **accounting rules**. The review classifies each billing account by what its balance means, and checks the sign of its balances.

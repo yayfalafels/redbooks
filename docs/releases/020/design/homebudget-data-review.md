@@ -56,6 +56,8 @@ This review is design topic 04.04 in the **release milestones**. It works from t
 - **review outputs**: `data/homebudget-data-review/`, gitignored, holding the account `01` reference figures, the account `01` mapping domain and the real-name key for every role id in this doc
 - **homebudget wrapper**: [https://github.com/yayfalafels/homebudget](https://github.com/yayfalafels/homebudget), version 2.1.1, installed editable in `env/`
 - **financial statements design**: [financial-statements.md](financial-statements.md), design topic 04.09
+- **data migration**: [data-migration.md](data-migration.md), the account and category mapping and the load runs
+- **legacy financial statements**: [financial-statements-legacy.md](financial-statements-legacy.md), the legacy workbooks and their mapping
 - **reference statements**: the sample income statement and balance sheet in the gitignored `data/financial-statements/` folder, which show the canonical statement form
 - **fs account classification**: `financial-statements/docs/releases/010/requirements/account-classification.md`
 - **fs transaction categories**: `financial-statements/docs/releases/010/requirements/transaction-categories.md`
@@ -136,7 +138,7 @@ Both databases sign balances by their contribution to net worth, so the HomeBudg
 
 ## Canonical financial statement taxonomy
 
-RedBooks reports both statements in the canonical form of the **reference statements**. The **financial statements design**, topic 04.09, owns that taxonomy and mirrors the **fs account classification** and the **fs transaction categories**: its account types TY.01 to TY.08 set balance sheet placement, and its sections, categories and subcategory lines set income statement placement. This review maps each HomeBudget account and category onto them. The legacy **homebudget workbook** and **financial statements workbook** hold the explicit HomeBudget-to-statement mapping for account `01`, and the **fs category translation** transcribes it.
+The **financial statements design**, topic 04.09, owns the RedBooks taxonomy: its account types TY.01 to TY.08 set balance sheet placement, and its categories and subcategory lines, each category assigned to one statement section, set income statement placement. The **data migration** maps each HomeBudget account and category onto them, and this review supplies the source facts that mapping rests on. The legacy **homebudget workbook** and **financial statements workbook** hold the explicit HomeBudget-to-statement mapping for account `01`, the **fs category translation** transcribes it, and the **legacy financial statements** doc describes it.
 
 ## Account mapping
 
@@ -155,7 +157,7 @@ The **fs account registry**, the `accounts` region of the **financial statements
 
 ### Account 02 accounts
 
-Each account `02` account takes the account type of its account `01` registry pair. An account with no registry pair takes the type the **financial statements design** sets for its kind.
+Each account `02` account takes the account type of its account `01` registry pair. An account with no registry pair takes the type the **data migration** sets for its kind.
 
 | id    | role                    | cur | basis             | account type    |
 | ----- | ----------------------- | --- | ----------------- | --------------- |
@@ -200,12 +202,12 @@ The gap is the account `02` balance at the start of 2026-05-24 less the account 
 
 ## Category mapping
 
-01. **account 01** the `cat_map` region of the **homebudget workbook** maps each budget, category and subcategory to a legacy GL code, and the `fin_expense_cat_map` region of the **financial statements workbook** maps each GL code to its statement line. The **fetch script** reads both regions read-only into the **legacy mapping** outputs, and the AM table of the **financial statements design** transcribes the result. The `cat_map` category and subcategory pairs cover 8,574 of the 9,140 expenses in the migration scope. The other 566 fall mostly in 2017 to 2019, under the retired budget group and in travel, real estate and project subcategories the sheet never mapped, with 27 in 2026. Task 12.01 of the homebudget account 01 migrate milestone extends the mapping to them, so every pair reaches one line.
-02. **account 02** each of the 29 account `02` subcategories maps to the subcategory line of the same name in the SC table of the **financial statements design**, which records the `gl_code` it mirrors. The `taxes` category is a reduction of personal income, per CR.06 of that design, and the income names map to its personal income lines PS.01 to PS.07.
+01. **account 01** the `cat_map` region of the **homebudget workbook** maps each budget, category and subcategory to a legacy GL code, and the `fin_expense_cat_map` region of the **financial statements workbook** maps each GL code to its statement line. The **fetch script** reads both regions read-only into the **legacy mapping** outputs, and the AM table of the **data migration** transcribes the result. The `cat_map` category and subcategory pairs cover 8,574 of the 9,140 expenses in the migration scope. The other 566 fall mostly in 2017 to 2019, under the retired budget group and in travel, real estate and project subcategories the sheet never mapped, with 27 in 2026. Task 12.01 of the homebudget account 01 migrate milestone extends the mapping to them, so every pair reaches one line.
+02. **account 02** each of the 29 account `02` subcategories maps to the subcategory line of the same name in the SC table of the **financial statements design**, and the legacy line crosswalk of the **data migration** records the `gl_code` each mirrors. The `taxes` category is a reduction of personal income, per CR.06 of the **data migration**, and the income names map to the personal income lines PS.01 to PS.07.
 
 ### Open issue
 
-The one open issue of this review is the account `02` mapping onto the canonical taxonomy. The **financial statements design** proposes it, and the user confirms it before the account `02` seed milestone closes. 02.SEED.03 fails on any account `02` account or subcategory without a confirmed placement. Three points need the user's call:
+The one open issue of this review is the account `02` mapping onto the canonical taxonomy. The **data migration** proposes it, and the user confirms it before the account `02` seed milestone closes. 02.SEED.03 fails on any account `02` account or subcategory without a confirmed placement. Three points need the user's call:
 
 01. **finer lines than the canonical form.** The SC table keeps each account `02` subcategory as its own line and rolls several into one `gl_code`, such as dating and social into socializing. The **reference statements** show only the `gl_code` lines.
 02. **items with no canonical line.** `cole/services` and `cole/loss` mirror no `gl_code`, and the three deposits M2.11 to M2.13 have no line of their own in the **reference statements**.

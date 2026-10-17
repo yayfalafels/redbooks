@@ -1,22 +1,21 @@
 # RedBooks 0.2.0 - Financial Statements
 
-This doc is design topic 04.09 in the **release milestones**. It defines the two financial statements RedBooks reports, the income statement and the balance sheet: their layout, the taxonomy that places every entry and every account on a line, the definition and calculation of each line and sub-line, the forex gain or loss, and the checks every statement passes. The structure and line definitions mirror the published statements of **financial-statements 010**, restated in the signed-entry vocabulary of the **accounting rules**. It settles open inputs 02.OD.10 of the **test cases** and WI.06 and WI.07 of the **workflows**.
+This doc defines the two financial statements RedBooks reports, the income statement and the balance sheet. It covers their layout, the sections and account types that place every entry and every account on a line, the definition and calculation of each line and sub-line, the forex gain or loss, and the checks every statement passes. Every statement is built from the RedBooks ledger, category model, account types and stored exchange rates, in the signed-entry vocabulary of the **accounting rules**.
 
 ## Contents
 
 - [Summary](#summary)
 - [References](#references)
-- [Mirroring financial-statements 010](#mirroring-financial-statements-010)
 - [Scope, period and population](#scope-period-and-population)
+- [Statement data model](#statement-data-model)
 - [Income statement](#income-statement)
   - [Income statement layout](#income-statement-layout)
-  - [Income statement taxonomy](#income-statement-taxonomy)
+  - [Income statement sections](#income-statement-sections)
   - [Summary block](#summary-block)
   - [Investment P and L](#investment-p-and-l)
   - [Personal income](#personal-income)
   - [Total expenses](#total-expenses)
   - [Expense detail](#expense-detail)
-  - [Category mapping rules](#category-mapping-rules)
   - [Retirement contributions](#retirement-contributions)
 - [Balance sheet](#balance-sheet)
   - [Balance sheet layout](#balance-sheet-layout)
@@ -26,7 +25,7 @@ This doc is design topic 04.09 in the **release milestones**. It defines the two
   - [Net cash transfers](#net-cash-transfers)
   - [Account detail](#account-detail)
 - [Currency translation and forex](#currency-translation-and-forex)
-- [Presentation](#presentation)
+- [Presentation view](#presentation-view)
 - [Line keys](#line-keys)
 - [Checks](#checks)
 - [Worked examples](#worked-examples)
@@ -35,84 +34,103 @@ This doc is design topic 04.09 in the **release milestones**. It defines the two
 ## Summary
 
 01. **two statements from one signed ledger.** The income statement covers a calendar month in the user's timezone, and the balance sheet stands at the end of that month. Both report in the user's reporting currency. The books, the API, the snapshots and every oracle hold signed amounts, and only rendering flips expense signs, per AR.18 of the **accounting rules**.
-02. **both statements lead with a summary block.** The income statement opens with net income, cash savings, gross savings, investment P and L and the forex gain or loss. The balance sheet opens with net income, the change in net worth, and opening and closing net worth. Detail follows below, as in the **fs samples**.
+02. **both statements lead with a summary block.** The income statement opens with net income, cash savings, gross savings, investment P and L and the forex gain or loss. The balance sheet opens with net income, the change in net worth, and opening and closing net worth. Detail follows below.
 03. **net income is gross savings plus investment P and L plus the forex gain or loss.** Gross savings is personal income less total expenses. Cash savings is gross savings less retirement contributions, which the user cannot spend.
-04. **the income statement taxonomy has three levels.** Each category carries one statement section, and each subcategory is a detail line. A category line totals its subcategories, and a section totals its categories. The sections are personal income, investment P and L, rental, cost of living expenses (COLE) and discretionary.
-05. **taxes deduct inside personal income.** Taxes stays an expense category in the books, and the statement places it in personal income as taxes paid, as **financial-statements 010** does.
+04. **the income statement groups the two-level category model into sections.** The category model has categories and their subcategories, and each subcategory is a detail line. The statement section is not a third level of the model but a required attribute of each category, which adds a section total above its category lines. A category line totals its subcategories, and a section totals its categories. The sections are personal income, investment P and L, rental, cost of living expenses (COLE) and discretionary.
+05. **taxes deduct inside personal income.** Taxes stays an expense category in the books, and the statement places it in personal income as taxes paid.
 06. **the balance sheet nests net worth over its sections.** Net worth is illiquid and retirement plus liquid net worth, and liquid net worth is cash and bank accounts, liquid investments and credit. Every account type belongs to one section.
 07. **liabilities show their signed negative balance.** The balance sheet never flips a sign, so every section and net worth is the plain sum of the lines beneath it. This settles 02.OD.10 and WI.06.
-08. **brokerage cash is the one account whose section follows its sign.** A positive balance sits in cash and bank accounts and a negative one in credit, as the **fs account classification** sets for brokerage cash.
+08. **brokerage cash is the one account whose section follows its sign.** A positive balance sits in cash and bank accounts and a negative one in credit.
 09. **the forex gain or loss is computed when a statement is built.** For each foreign currency account it is the closing reporting value, less the opening reporting value, less the period's entries in the reporting currency. It is never posted to the ledger, and it appears on both statements.
 10. **the two statements reconcile exactly.** Closing net worth equals opening net worth plus net income, plus opening balances and movements with accounts outside net worth. RedBooks builds both statements from one ledger, so the gap is zero by construction, and a non-zero gap fails the build.
+11. **the statement data is separate from its presentation.** A build stores detail lines, read from the ledger, and summary lines, the totals and derived lines computed from them, in two tables. The presentation view arranges both into the layout, adds labels, levels and the figures that span months, and flips expense signs only when it renders.
 
 ## References
 
 - **release notes**: [020-release.md](../020-release.md)
 - **release milestones**: [020-release-milestones.md](../020-release-milestones.md)
 - **accounting rules**: [accounting-rules.md](accounting-rules.md)
-- **homebudget data review**: [homebudget-data-review.md](homebudget-data-review.md)
 - **workflows**: [workflows.md](workflows.md)
 - **front end pages**: [front-end-pages.md](front-end-pages.md)
 - **test cases**: [test-cases.md](test-cases.md)
 - **lessons learned**: [easymcf-lessons-learned.md](easymcf-lessons-learned.md)
 - **statements skill**: `.claude/skills/accounting/references/statements.md`
-- **fs samples**: `data/financial-statements/20260329-income-statement.*` and `data/financial-statements/20260329-balance-sheet.*`, the published workbook statements as PDF and CSV, gitignored
-- **financial-statements 010**: [https://github.com/yayfalafels/financial-statements/](https://github.com/yayfalafels/financial-statements/)
-- **fs financial statements**: `financial-statements/docs/releases/010/requirements/financial-statements.md`
-- **fs account classification**: `financial-statements/docs/releases/010/requirements/account-classification.md`
-- **fs transaction categories**: `financial-statements/docs/releases/010/requirements/transaction-categories.md`
-- **fs accounting logic**: `financial-statements/docs/releases/010/requirements/accounting-logic.md`
-- **fs forex design**: `financial-statements/docs/releases/010/design/forex.md`
-- **fs category translation**: `financial-statements/docs/releases/010/design/category-account-model-translation.md`
 
-This doc names accounts by role and uses illustrative amounts. The **fs samples** hold real figures and account names, so this doc copies their structure and formulas only, per LL.08 of the **lessons learned**.
-
-## Mirroring financial-statements 010
-
-Each RedBooks statement element has a counterpart in **financial-statements 010**, either in its requirements or in the **fs samples**. Where the two disagree, RedBooks follows the requirements and records the difference below.
-
-| id    | financial-statements 010         | RedBooks                              |
-| ----- | -------------------------------- | ------------------------------------- |
-| FM.01 | income statement summary rows    | income statement summary block        |
-| FM.02 | income statement sections        | statement sections IS.01 to IS.05     |
-| FM.03 | expense `gl_code`                | subcategory                           |
-| FM.04 | `category_group_key`             | the statement section of a category   |
-| FM.05 | income type                      | personal income subcategory           |
-| FM.06 | P and L component                | investment P and L category           |
-| FM.07 | M2M USD forex                    | forex gain or loss                    |
-| FM.08 | CPF contributions tracking       | retirement contributions              |
-| FM.09 | asset subcategory                | account type                          |
-| FM.10 | balance sheet asset type         | balance sheet section                 |
-| FM.11 | net assets and liquid net assets | net worth and liquid net worth        |
-| FM.12 | cash transfers                   | net cash transfers                    |
-| FM.13 | reconcile error                  | identity check, zero by construction  |
-| FM.14 | IBKR cash sign rule              | brokerage cash sign routing           |
-| FM.15 | cost center `TWH - Personal`     | clearing account type                 |
-| FM.16 | `cat_map` and `fin_exp_cat_map`  | category mapping rules CR.01 to CR.07 |
-
-01. **signs.** **financial-statements 010** holds expenses as positive amounts and deducts them. RedBooks holds them as negative entries and sums every line, per AR.01. The rendered figures read the same.
-02. **retirement contributions.** **financial-statements 010** books the employee contribution as a transfer from the salary account. RedBooks posts the gross salary as income on the accounts it lands in, per CE.08 of the **accounting rules**. The migrated account `01` history keeps the transfer pattern, and the retirement contributions block counts both, per [Retirement contributions](#retirement-contributions).
-03. **expense detail.** The **fs samples** still group expense detail under personal and household, the legacy model that decision TC-01 of the **fs transaction categories** retired. RedBooks shows expense detail by category and subcategory, and its sections follow the rental, COLE and discretionary groups of TC-01.
-04. **forex.** The **fs samples** show one forex line, for USD balances. RedBooks computes it for every foreign currency account in net worth, positions included, from the ledger and the stored rates.
-05. **stored-value and brokerage cash.** The **fs samples** place stored-value cards and brokerage cash under misc credit. RedBooks follows the accounts table of the **fs category translation** and the **fs account classification**: stored value is wallet cash, and brokerage cash routes by its sign.
-06. **reconcile error.** The workbook showed the gap between net income and the change in net assets as its own line. RedBooks derives both from one ledger, so it shows no such line and fails the build instead, per CK.03.
-07. **forecast columns.** The **fs samples** fill future months with forecast values. RedBooks `0.2.0` has no forecast, and future months stay empty.
+This doc names accounts by role and uses illustrative amounts, per LL.08 of the **lessons learned**.
 
 ## Scope, period and population
 
 01. **SP.01 the income statement period** is a calendar month in the user's timezone. An entry falls in the month of its transaction date, per 02.FS.12.
 02. **SP.02 the balance sheet date** is the end of the last day of the month. The current month's balance sheet stands at the end of today and is marked incomplete.
-03. **SP.03 the year view** shows the twelve months of a calendar year, preceded by the December of the year before as an opening column. The income statement adds a year total and a monthly average. The balance sheet has no year total, since each column is a point in time.
-04. **SP.04 the population** is one user's ledger. The income statement holds every income and expense entry of the user. The balance sheet holds every account in net worth. Accounts outside net worth, such as the counterparties of DQ.39 in the **homebudget data review**, stay off the balance sheet, and their movements appear in [Net worth movement](#net-worth-movement).
+03. **SP.03 the year view** shows the twelve months of a calendar year, preceded by the December of the year before as an opening column. The income statement adds a year total and a monthly average. The balance sheet equivalent of summary values are the beginning balance at beginning of first month 01 and the ending balance at the end of month 12.
+04. **SP.04 the population** is one user's ledger. The income statement holds every income and expense entry of the user. The balance sheet holds every account in net worth. Accounts outside net worth, such as counterparties the user tracks but does not own, stay off the balance sheet, and their movements appear in [Net worth movement](#net-worth-movement).
 05. **SP.05 transfers and opening balances** never reach the income statement, per AR.09 and AR.10.
 06. **SP.06 a closed month** reads its current snapshot version, and the current month is month to date, built on request, per the financial statements milestone of the **release milestones**.
 07. **SP.07 zero lines.** Every active category, subcategory and account shows a line in each view, at 0.00 when nothing moved, per 02.FS.13. A retired one shows only in a view where its amount is non-zero.
+
+## Statement data model
+
+A statement build writes a snapshot version, per the financial statements milestone of the **release milestones**. The version holds the lines of both statements in two tables: detail lines, read from the ledger, and summary lines, computed from the detail lines. Neither table holds a label, an order, a level or a rendered sign. Those belong to the [Presentation view](#presentation-view).
+
+| id    | line kind | computed from                              | table         |
+| ----- | --------- | ------------------------------------------ | ------------- |
+| SM.01 | detail    | the ledger entries or balance of one item  | detail lines  |
+| SM.02 | total     | the sum of the lines beneath it            | summary lines |
+| SM.03 | derived   | a formula or a measure across the sections | summary lines |
+
+Every line of this doc is one of the three kinds.
+
+| id    | line                                       | kind    | key   |
+| ----- | ------------------------------------------ | ------- | ----- |
+| SL.01 | subcategory line                           | detail  | LK.04 |
+| SL.02 | retirement fund line, RC.04                | detail  | LK.05 |
+| SL.03 | account line                               | detail  | LK.06 |
+| SL.04 | transfer route line, CT.03                 | detail  | LK.08 |
+| SL.05 | forex of an account                        | detail  | LK.09 |
+| SL.06 | category line                              | total   | LK.03 |
+| SL.07 | section total, IS.01 to IS.05              | total   | LK.02 |
+| SL.08 | subsection total, one per account type     | total   | LK.07 |
+| SL.09 | NW.01 to NW.06                             | total   | LK.01 |
+| SL.10 | SB.01 to SB.05, PI.01 to PI.06             | derived | LK.01 |
+| SL.11 | TE.01 to TE.04, RC.01 to RC.03             | derived | LK.01 |
+| SL.12 | NM.01 to NM.06, CT.01, CT.02 and CT.04     | derived | LK.01 |
+
+The detail lines table holds one row per detail line.
+
+| id    | column           | value                                                  |
+| ----- | ---------------- | ------------------------------------------------------ |
+| DL.01 | snapshot version | the version the line belongs to                        |
+| DL.02 | statement        | `is` or `bs`                                           |
+| DL.03 | line key         | LK.04, LK.05, LK.06, LK.08 or LK.09                    |
+| DL.04 | subcategory      | the subcategory of a subcategory line                  |
+| DL.05 | account          | the account of an account, fund or forex line          |
+| DL.06 | counter account  | the receiving account of a route, DL.05 its sender     |
+| DL.07 | amount           | signed, in the reporting currency                      |
+| DL.08 | account amount   | signed, in the account currency, for a foreign account |
+| DL.09 | forex inputs     | B_r, T_r and E_r, for a forex line                     |
+
+The summary lines table holds one row per total and derived line.
+
+| id    | column           | value                             |
+| ----- | ---------------- | --------------------------------- |
+| SU.01 | snapshot version | the version the line belongs to   |
+| SU.02 | statement        | `is` or `bs`                      |
+| SU.03 | line key         | LK.01, LK.02, LK.03 or LK.07      |
+| SU.04 | kind             | total or derived                  |
+| SU.05 | amount           | signed, in the reporting currency |
+
+01. **one version, one month.** A snapshot version covers one month, so each line has one amount. A figure that spans months, such as a year total, a monthly average or TE.05, is a view line, computed from the current versions of the months in the view and never stored.
+02. **totals and derived lines are stored.** A stale comparison and CK.02 then run line by line on stored values, with no recomputation at read.
+03. **zero lines are stored.** Every active item has a detail row in every version, at 0.00 when nothing moved, per SP.07, so a stale comparison sees a line move from zero.
+04. **ids, not names.** A detail row names its subcategory or account by id. The view reads the current name, so a renamed category keeps its line.
+05. **month to date** builds the same two tables in memory and stores neither.
+06. the data model topic, 04.05, sets the column types, keys and constraints.
 
 ## Income statement
 
 ### Income statement layout
 
-The income statement reads top to bottom as six blocks. The summary block comes first, as in the **fs samples**.
+The income statement view reads top to bottom as six blocks, with the summary block first. Each row is a line of the [Statement data model](#statement-data-model) or a view line of the [Presentation view](#presentation-view).
 
 ```text
 Income statement
@@ -155,19 +173,21 @@ Income statement
     └── one line per retirement fund account
 ```
 
-### Income statement taxonomy
+### Income statement sections
 
-Every income and expense entry reaches exactly one detail line through three levels: statement section, category and subcategory.
+Every income and expense entry reaches exactly one detail line, its subcategory, through the two levels of the category model: category and subcategory. The statement section groups categories for presentation. 
 
-| id    | section            | key             | category kind   | in net income |
-| ----- | ------------------ | --------------- | --------------- | ------------- |
-| IS.01 | personal income    | `personal`      | income, expense | yes           |
-| IS.02 | investment P and L | `investment`    | income, expense | yes           |
-| IS.03 | rental             | `rental`        | expense         | yes           |
-| IS.04 | COLE ex rent       | `cole`          | expense         | yes           |
-| IS.05 | discretionary      | `discretionary` | expense         | yes           |
+all show up in net income
 
-01. **each category carries one section.** The section is a required attribute of the category, so every entry has a line and the mapping coverage gate of the **fs financial statements** holds by constraint.
+| id    | section            | key             | category kind   | 
+| ----- | ------------------ | --------------- | --------------- | 
+| IS.01 | personal income    | `personal`      | income, expense | 
+| IS.02 | investment P and L | `investment`    | income, expense | 
+| IS.03 | rental             | `rental`        | expense         | 
+| IS.04 | COLE ex rent       | `cole`          | expense         | 
+| IS.05 | discretionary      | `discretionary` | expense         | 
+
+01. **each category carries one section.** The section is a required attribute of the category, so every entry reaches a line by constraint.
 02. **IS.01** holds the income categories of personal income and the expense category taxes. **IS.02** holds the investment income categories and any loss expense category the accounts topic, 04.06, adds under AR.13.
 03. **a subcategory line** is the sum of the reporting amounts of the entries on that subcategory in the period.
 04. **a category line** is the sum of its subcategory lines, exactly, per 02.FS.03. A section total is the sum of its category lines.
@@ -193,7 +213,7 @@ Every summary line is derived. Amounts are signed: income positive, expenses neg
 
 ### Investment P and L
 
-Section IS.02 mirrors the three P and L components of the **fs transaction categories**. Its categories and subcategories are seeded for each user.
+Section IS.02 has three categories, one per P and L component. Its categories and subcategories are seeded for each user.
 
 | id    | category                | subcategory              | definition                         |
 | ----- | ----------------------- | ------------------------ | ---------------------------------- |
@@ -205,37 +225,37 @@ Section IS.02 mirrors the three P and L components of the **fs transaction categ
 | IP.06 | mark to market illiquid | unrealised gain or loss  | revaluation of retirement holdings |
 | IP.07 | mark to market illiquid | retirement fund returns  | interest and growth inside a fund  |
 
-01. **IP.02** covers bank interest as well as brokerage interest, since the **fs account classification** books all interest as investment income.
-02. **IP.03** follows AR.14 of the **accounting rules**. A position closed with no cost basis, such as DQ.12 of the **homebudget data review**, is a transfer and adds nothing here.
+01. **IP.02** covers bank interest as well as brokerage interest. RedBooks books all interest as investment income.
+02. **IP.03** follows AR.14 of the **accounting rules**. A position closed with no cost basis is a transfer and adds nothing here.
 03. **IP.05** follows AR.13, with its entries on an account of type `investment`. **IP.06** takes the same entries on `retirement` accounts.
-04. **IP.07** treats every return credited inside a retirement fund as a revaluation, as the **fs account classification** does for illiquid accounts, since the user cannot draw it as cash.
+04. **IP.07** treats every return credited inside a retirement fund as a revaluation, since the user cannot draw it as cash.
 05. **gains and losses share a line.** A loss is a negative entry. Where 04.06 posts losses to a separate expense category under AR.13, that category carries section IS.02 and the same component name, and shows as its own category line beside the gain.
 06. the IS.02 section total excludes the forex gain or loss on positions, which SB.05 reports in full.
 
 ### Personal income
 
-Section IS.01 mirrors the income types of the **fs transaction categories** and the personal income rows of the **fs samples**. The seeded subcategories are the detail lines.
+Section IS.01 holds the user's earned income and the taxes on it. The seeded subcategories are the detail lines.
 
-| id    | category                | subcategory           | kind    | fs income type            |
-| ----- | ----------------------- | --------------------- | ------- | ------------------------- |
-| PS.01 | salary                  | base salary           | income  | base salary               |
-| PS.02 | salary                  | bonus                 | income  | bonus                     |
-| PS.03 | salary                  | part-time             | income  | part-time                 |
-| PS.04 | retirement contribution | employer contribution | income  | CPF employer contribution |
-| PS.05 | other income            | rebates               | income  | other income              |
-| PS.06 | other income            | government payments   | income  | other income              |
-| PS.07 | other income            | other                 | income  | other income              |
-| PS.08 | taxes                   | income tax            | expense | taxes paid                |
-| PS.09 | taxes                   | other tax             | expense | taxes paid                |
+| id    | category                | subcategory           | kind    |
+| ----- | ----------------------- | --------------------- | ------- |
+| PS.01 | salary                  | base salary           | income  |
+| PS.02 | salary                  | bonus                 | income  |
+| PS.03 | salary                  | part-time             | income  |
+| PS.04 | retirement contribution | employer contribution | income  |
+| PS.05 | other income            | rebates               | income  |
+| PS.06 | other income            | government payments   | income  |
+| PS.07 | other income            | other                 | income  |
+| PS.08 | taxes                   | income tax            | expense |
+| PS.09 | taxes                   | other tax             | expense |
 
 01. **PS.01** is regular gross pay from the main employer: the whole salary transaction, including the share that lands on retirement fund accounts, per CE.08 of the **accounting rules**.
 02. **PS.02** is performance and one-off pay from the main employer, gross. **PS.03** is gross pay from secondary or contract work.
 03. **PS.04** is the employer's contribution credited to a retirement fund, a positive income entry on the fund.
-04. **PS.05** is cashback and rebates that reverse no single purchase, such as DQ.13 of the **homebudget data review**. A refund of a purchase is a positive entry on that purchase's expense subcategory, per AR.06.
+04. **PS.05** is cashback and rebates that reverse no single purchase. A refund of a purchase is a positive entry on that purchase's expense subcategory, per AR.06.
 05. **PS.06** is government rebates and payouts received as income. **PS.07** is any other personal income.
-06. **PS.08** is tax on income paid to the tax authority. A refund is a positive entry on the same subcategory, per AR.06. **PS.09** is any other tax, and a government subsidy filed as a negative tax in account `01`, per CM.10 of the **homebudget data review**.
+06. **PS.08** is tax on income paid to the tax authority. A refund is a positive entry on the same subcategory, per AR.06. **PS.09** is any other tax. A government subsidy against tax is a positive entry on PS.09.
 
-The derived personal income lines follow the **fs samples**.
+The derived personal income lines are formulas over the subcategory lines and the retirement contributions block.
 
 | id    | line                                     | formula                     |
 | ----- | ---------------------------------------- | --------------------------- |
@@ -262,162 +282,90 @@ The total expenses block holds the three expense section totals and their ratio.
 | TE.04 | discretionary    | the IS.05 section total                      |
 | TE.05 | lifestyle factor | TE.04 of the period / its share of year COLE |
 
-01. **TE.02 rental** is the fixed committed cost of housing, per the **fs financial statements**.
+01. **TE.02 rental** is the fixed committed cost of housing.
 02. **TE.03 COLE ex rent** is the recurring spending needed to keep the household's standard of living, rent excluded.
 03. **TE.04 discretionary** is spending the user can vary at will.
 04. **TE.05 lifestyle factor** is discretionary divided by COLE: the discretionary spending per unit of cost of living, rent excluded. Both are taken as positive amounts. The denominator is always the year's COLE, scaled to the length of the period, so a lumpy COLE month such as an annual insurance premium does not swing a quarter's figure.
     01. **year**: the year's discretionary divided by the year's COLE.
-    02. **quarter**: the quarter's discretionary divided by 0.25 times the year's COLE, as the **fs samples** compute it.
+    02. **quarter**: the quarter's discretionary divided by 0.25 times the year's COLE.
     03. **year COLE of the current year** is its COLE to date times 12, divided by the number of months of the year that have started. A closed year uses its actual total.
     04. TE.05 is blank when the year's COLE is zero, and shows to two decimals.
-    05. **where it shows**: the year view shows the year figure in the year total column and each quarter's figure in the quarter's last month column, March, June, September and December, as the **fs samples** do. The month view of a quarter's last month shows that quarter's figure, and other month views leave it blank.
+    05. **where it shows**: the year view shows the year figure in the year total column and each quarter's figure in the quarter's last month column, March, June, September and December. The month view of a quarter's last month shows that quarter's figure, and other month views leave it blank.
 
-> **implementation decision** the year COLE of the current year is annualised from its months to date. The **fs samples** used a full-year figure that included forecast months, and RedBooks `0.2.0` has no forecast.
+> **implementation decision** the year COLE of the current year is annualised from its months to date, since RedBooks `0.2.0` has no forecast.
 
 ### Expense detail
 
-Each expense category belongs to one section. The account `02` categories are the base of the category model, per the **homebudget data review**.
+Each expense category belongs to one section.
 
-| id    | category      | section       | fs group               |
-| ----- | ------------- | ------------- | ---------------------- |
-| EC.01 | rent          | rental        | rental_expenses        |
-| EC.02 | cole          | COLE ex rent  | cole_expenses          |
-| EC.03 | insurance     | COLE ex rent  | cole_expenses          |
-| EC.04 | discretionary | discretionary | discretionary_expenses |
-| EC.05 | projects      | discretionary | discretionary_expenses |
-| EC.06 | taxes         | personal      | taxes paid             |
+| id    | category      | section       |
+| ----- | ------------- | ------------- |
+| EC.01 | rent          | rental        |
+| EC.02 | cole          | COLE ex rent  |
+| EC.03 | insurance     | COLE ex rent  |
+| EC.04 | discretionary | discretionary |
+| EC.05 | projects      | discretionary |
+| EC.06 | taxes         | personal      |
 
-Each subcategory is a detail line. The table lists the account `02` subcategories and the ones the account `01` mapping adds, with the `gl_code` each mirrors in the **fs transaction categories**.
+Each subcategory is a detail line. The table lists the expense subcategories of the category model.
 
-| id    | category      | subcategory           | fs `gl_code`         | covers                          |
-| ----- | ------------- | --------------------- | -------------------- | ------------------------------- |
-| SC.01 | rent          | rent                  | rental               | rent on the home                |
-| SC.02 | cole          | food                  | food                 | groceries and everyday meals    |
-| SC.03 | cole          | transport             | transport            | metro and bus fares             |
-| SC.04 | cole          | healthcare            | healthcare_oop       | out-of-pocket medical costs     |
-| SC.05 | cole          | grooming              | healthcare_oop       | haircuts and grooming           |
-| SC.06 | cole          | mobile                | mobile               | mobile phone plan               |
-| SC.07 | cole          | clothing              | clothing             | clothing and shoes              |
-| SC.08 | cole          | post                  | post                 | postage and courier             |
-| SC.09 | cole          | internet              | singtel_internet     | home internet                   |
-| SC.10 | cole          | water                 | pub_water_gas        | home water                      |
-| SC.11 | cole          | gas                   | pub_water_gas        | home gas                        |
-| SC.12 | cole          | pub other             | pub_water_gas        | other utility charges           |
-| SC.13 | cole          | electricity           | electricity          | home electricity                |
-| SC.14 | cole          | sundries              | sundries             | household consumables           |
-| SC.15 | cole          | maintenance           | maintenance          | home repairs and upkeep         |
-| SC.16 | cole          | services              | none                 | recurring household services    |
-| SC.17 | cole          | loss                  | none                 | money lost or written off       |
-| SC.18 | insurance     | health                | insurance            | health insurance premiums       |
-| SC.19 | discretionary | fitness               | fitness              | gym, classes and sport          |
-| SC.20 | discretionary | drinks                | non_alcoholic_drinks | coffee and soft drinks out      |
-| SC.21 | discretionary | alcohol               | alcohol              | alcoholic drinks                |
-| SC.22 | discretionary | social                | socializing          | outings with friends and family |
-| SC.23 | discretionary | dating                | socializing          | dates                           |
-| SC.24 | discretionary | software              | it_software          | software and app subscriptions  |
-| SC.25 | discretionary | ai services           | it_software          | AI service subscriptions        |
-| SC.26 | discretionary | it hardware           | it_hardware          | computers, phones, accessories  |
-| SC.27 | discretionary | books                 | books                | books                           |
-| SC.28 | discretionary | travel                | travel               | trips away from home            |
-| SC.29 | discretionary | education             | higher_education     | courses and tuition             |
-| SC.30 | discretionary | movies music          | discretionary_misc   | films, music and streaming      |
-| SC.31 | discretionary | fines                 | discretionary_misc   | fines and penalties             |
-| SC.32 | discretionary | taxi                  | discretionary_misc   | taxis and ride hailing          |
-| SC.33 | discretionary | bike                  | discretionary_misc   | bike hire                       |
-| SC.34 | discretionary | professional services | discretionary_misc   | agents, banking and legal fees  |
-| SC.35 | discretionary | donations             | discretionary_misc   | donations                       |
-| SC.36 | discretionary | pets and plants       | pets_and_plants      | pets and plants                 |
-| SC.37 | discretionary | durables              | durables             | furniture and appliances        |
-| SC.38 | discretionary | cleaning              | cleaning_service     | cleaning services               |
-| SC.39 | discretionary | gifts                 | family_gifts         | gifts to family and friends     |
-| SC.40 | projects      | one per project       | projects             | spending on a named project     |
+| id    | category      | subcategory           | covers                                 |
+| ----- | ------------- | --------------------- | -------------------------------------- |
+| SC.01 | rent          | rent                  | rent on the home                       |
+| SC.02 | cole          | food                  | groceries and everyday meals           |
+| SC.03 | cole          | transport             | metro and bus fares                    |
+| SC.04 | cole          | healthcare            | out-of-pocket medical costs            |
+| SC.05 | cole          | grooming              | haircuts and grooming                  |
+| SC.06 | cole          | mobile                | mobile phone plan                      |
+| SC.07 | cole          | clothing              | clothing and shoes                     |
+| SC.08 | cole          | post                  | postage and courier                    |
+| SC.09 | cole          | internet              | home internet                          |
+| SC.10 | cole          | water                 | home water                             |
+| SC.11 | cole          | gas                   | home gas                               |
+| SC.12 | cole          | pub other             | other utility charges                  |
+| SC.13 | cole          | electricity           | home electricity                       |
+| SC.14 | cole          | sundries              | household consumables                  |
+| SC.15 | cole          | maintenance           | home repairs and upkeep                |
+| SC.16 | cole          | services              | recurring household services           |
+| SC.17 | cole          | loss                  | money lost reconcile write off         |
+| SC.18 | insurance     | health                | health insurance premiums              |
+| SC.19 | discretionary | fitness               | gym, classes protein and sport         |
+| SC.20 | discretionary | drinks                | coffee and soft drinks out             |
+| SC.21 | discretionary | alcohol               | alcoholic drinks                       |
+| SC.22 | discretionary | social                | friends family and dating              |
+| SC.23 | discretionary | dating                | dates                                  |
+| SC.24 | discretionary | software              | software and app subscriptions         |
+| SC.25 | discretionary | ai services           | AI service subscriptions               |
+| SC.26 | discretionary | it hardware           | computers, phones, accessories         |
+| SC.27 | discretionary | books                 | books                                  |
+| SC.28 | discretionary | travel                | trips away from home                   |
+| SC.29 | discretionary | education             | courses and tuition                    |
+| SC.30 | discretionary | movies music          | films, music and streaming             |
+| SC.31 | discretionary | fines                 | fines and penalties                    |
+| SC.32 | discretionary | taxi                  | taxis and ride hailing                 |
+| SC.33 | discretionary | bike                  | bike hire                              |
+| SC.34 | discretionary | professional services | agents, banking and legal fees         |
+| SC.35 | discretionary | donations             | donations                              |
+| SC.36 | discretionary | pets and plants       | pets and plants                        |
+| SC.37 | discretionary | durables              | furniture and appliances               |
+| SC.38 | discretionary | cleaning              | cleaning services                      |
+| SC.39 | discretionary | gifts                 | gifts to family and friends            |
+| SC.40 | projects      | one per project       | spending on a named project            |
+| SC.41 | discretionary | massage               | massage and spa                        |
+| SC.42 | discretionary | other                 | discretionary spending no line matches |
 
-| SC.41 | discretionary | massage | discretionary_misc | massage and spa |
-| ----- | ------------- | ------- | ------------------ | --------------- |
-
-01. **SC.03 and SC.32** follow the **fs category translation**: only metro and bus fares are cost of living, and taxis are discretionary.
-02. **SC.05** sits under cole as the **homebudget data review** maps it. The **fs category translation** files grooming under healthcare out-of-pocket, which is also cost of living, so the section is the same.
-03. **SC.16 and SC.17** are account `02` subcategories with no **financial-statements 010** line. Both are cost of living as account `02` files them.
-04. **SC.25** covers subscriptions to artificial intelligence (AI) services, which the **fs transaction categories** would file under IT software.
-05. **SC.34** holds the card foreign exchange fee of AR.12 item 05 of the **accounting rules**, as account `01` filed currency conversion under professional services.
+01. **SC.03 and SC.32** only metro and bus fares are cost of living. Taxis are discretionary.
+02. **SC.05** grooming is cost of living, beside out-of-pocket healthcare.
+03. **SC.16 and SC.17** are cost of living.
+04. **SC.25** covers subscriptions to artificial intelligence (AI) services.
+05. **SC.34** holds the card foreign exchange fee of AR.12 item 05 of the **accounting rules**.
 06. **SC.40** a project is a bounded piece of spending the user wants to see as one line, such as a home move. Project names stay out of committed docs, per LL.08 of the **lessons learned**.
-07. **SC.42** replaces the misc discretionary catch-all of the **fs category translation**, which matched any discretionary row no specific line had captured. In RedBooks every entry names its subcategory, so the catch-all becomes an explicit subcategory.
-08. task 12.01 of the homebudget account 01 migrate milestone completes the account `01` mapping from [Category mapping rules](#category-mapping-rules) and may add subcategories. Each new subcategory belongs to a category, which carries its section.
-
-### Category mapping rules
-
-**financial-statements 010** reached a statement line in two stages. Stage 1, the `cat_map` region, mapped each HomeBudget category and subcategory to a GL code. Stage 2, the `fin_exp_cat_map` region, mapped each GL code to a statement line, the `gl_code`, with a COLE flag that set its group. The **fs category translation** documents both stages. RedBooks collapses them into one model and keeps their business rules.
-
-01. **CR.01 one hop from entry to line.** The account `02` categories are the statement categories, so an entry's subcategory is its detail line and its category's section is its group. No GL code sits between them.
-02. **CR.02 the group follows the COLE flag.** A category whose lines carry COLE 1 in stage 2 takes section `cole`. One with COLE 0 takes `rental` when its line is rental and `discretionary` otherwise. Account `02` follows this already: cole and insurance hold COLE lines, rent holds rental, and discretionary and projects hold the rest.
-03. **CR.03 a section is set per category.** Stage 2 set the COLE flag per line. A RedBooks category whose subcategories would fall in two sections splits into two categories, as account `01` Health and Wellness splits across cole, insurance and discretionary.
-04. **CR.04 many sources, one line.** Stage 2 aggregated several GL codes into one line: socializing from socializing and dating, PUB water/gas from water, gas and utilities misc, and higher education from the academic program projects. RedBooks keeps the finer subcategories as detail lines, such as social and dating, and the category line totals them, per 02.FS.03. Each source subcategory maps to exactly one RedBooks subcategory.
-05. **CR.05 the specific line wins.** Stage 2 matched a row at subcategory level before its category-level catch-all. The account `01` mapping applies the same order: a source subcategory with a specific line maps there, and only the rest of a discretionary category maps to SC.42.
-06. **CR.06 taxes reduce income.** Stage 1 mapped income tax, other tax and the government subsidy to one tax code, which stage 2 kept off the expense lines as a reduction of income. RedBooks keeps the taxes category in personal income, per PS.08 and PS.09, and a subsidy is a positive entry on other tax.
-07. **CR.07 an unmapped subcategory fails only in scope.** The **fs category translation** raises a validation error for an unmapped category only when it appears on transactions in scope. The account `01` migration fails a row whose source subcategory has no mapping inside the migration scope, and drops a subcategory with no row in scope, per DQ.35 of the **homebudget data review**.
-
-The account `01` subcategories map as the `cat_map` and `fin_exp_cat_map` regions set them. This is the subcategory-level mapping task 12.01 confirms with the user.
-
-| id    | account 01 category     | account 01 subcategories           | fs `gl_code`         | RedBooks   |
-| ----- | ----------------------- | ---------------------------------- | -------------------- | ---------- |
-| AM.01 | Food (Basic)            | all four                           | food                 | SC.02      |
-| AM.02 | Health and Wellness     | Grooming, Haircut                  | healthcare_oop       | SC.05      |
-| AM.03 | Health and Wellness     | Medical expenses, Medical supplies | healthcare_oop       | SC.04      |
-| AM.04 | Health and Wellness     | Health insurance                   | insurance            | SC.18      |
-| AM.05 | Health and Wellness     | Fitness                            | fitness              | SC.19      |
-| AM.06 | Health and Wellness     | Massage                            | discretionary_misc   | SC.41      |
-| AM.07 | Health and Wellness     | Medical - sexual health            | discretionary_misc   | SC.42      |
-| AM.08 | Household               | Maintenance                        | maintenance          | SC.15      |
-| AM.09 | Household               | Sundries                           | sundries             | SC.14      |
-| AM.10 | Household               | Pet and Plants                     | pets_and_plants      | SC.36      |
-| AM.11 | Household               | Cleaning service                   | cleaning_service     | SC.38      |
-| AM.12 | Household               | Durable goods, Furniture           | durables             | SC.37      |
-| AM.13 | Personal Discretionary  | Clothing, Shoes                    | clothing             | SC.07      |
-| AM.14 | Personal Discretionary  | Books                              | books                | SC.27      |
-| AM.15 | Personal Discretionary  | Education                          | books                | SC.29      |
-| AM.16 | Personal Discretionary  | IT                                 | it_hardware          | SC.26      |
-| AM.17 | Personal Discretionary  | Cloud data                         | it_software          | SC.24      |
-| AM.18 | Personal Discretionary  | Donations                          | discretionary_misc   | SC.35      |
-| AM.19 | Personal Discretionary  | Jewelry and Accessories            | discretionary_misc   | SC.42      |
-| AM.20 | Professional Services   | Post                               | post                 | SC.08      |
-| AM.21 | Professional Services   | the other five                     | discretionary_misc   | SC.34      |
-| AM.22 | Project                 | academic program projects          | higher_education     | SC.29      |
-| AM.23 | Project                 | trip projects                      | travel               | SC.28      |
-| AM.24 | Project                 | carbon offset                      | discretionary_misc   | SC.42      |
-| AM.25 | Project                 | other projects                     | projects             | SC.40      |
-| AM.26 | Rent                    | Rent                               | rental               | SC.01      |
-| AM.27 | Social & Entertainment  | Alcohol                            | alcohol              | SC.21      |
-| AM.28 | Social & Entertainment  | Drinks - nonalcoholic              | non_alcoholic_drinks | SC.20      |
-| AM.29 | Social & Entertainment  | Dating, Date night dinner          | socializing          | SC.23      |
-| AM.30 | Social & Entertainment  | Friends, Events and others         | socializing          | SC.22      |
-| AM.31 | Social & Entertainment  | Family, Gifts                      | family_gifts         | SC.39      |
-| AM.32 | Taxes and Fines         | Taxes - income                     | income tax           | PS.08      |
-| AM.33 | Taxes and Fines         | Taxes - other, Gov subsidy         | income tax           | PS.09      |
-| AM.34 | Taxes and Fines         | Fines                              | discretionary_misc   | SC.31      |
-| AM.35 | Taxes and Fines         | unauthorized transaction           | discretionary_misc   | SC.42      |
-| AM.36 | Transport               | MRT                                | transport            | SC.03      |
-| AM.37 | Transport               | every Taxi subcategory             | discretionary_misc   | SC.32      |
-| AM.38 | Transport               | Bike                               | discretionary_misc   | SC.33      |
-| AM.39 | Travel                  | Lodging                            | travel               | SC.28      |
-| AM.40 | Utilities               | Electricity                        | electricity          | SC.13      |
-| AM.41 | Utilities               | Gas, Water, PUB other              | pub_water_gas        | SC.10-12   |
-| AM.42 | Utilities               | Internet/TV                        | singtel_internet     | SC.09      |
-| AM.43 | Utilities               | Mobile                             | mobile               | SC.06      |
-| AM.44 | Balancing, Reimbursable | all                                | discretionary_misc   | task 12.01 |
-| AM.45 | Real Estate, Securities | all                                | none                 | task 12.01 |
-
-01. **AM.02** the **fs category translation** files grooming under healthcare out-of-pocket. The **homebudget data review** gives it its own cole subcategory, so the section is unchanged.
-02. **AM.15** stage 2 fed Education into the books line. RedBooks files it with the academic projects of AM.22 under education, the higher education line, since both are spending on courses.
-03. **AM.21** Agent, Banking, Counseling, Currency conversion and Legal. Currency conversion is the card foreign exchange fee, per SC.34.
-04. **AM.22 to AM.25** project names stay out of committed docs. The **review outputs** of the **homebudget data review** list each project with its mapping.
-05. **AM.37** the `fin_exp_cat_map` row for transport also lists a taxi code, but the `cat_map` note sets every taxi subcategory as discretionary. RedBooks follows the `cat_map` note.
-06. **AM.41** each maps to the account `02` subcategory of its own name, SC.10 to SC.12, which together are the PUB water/gas line.
-07. **AM.44** the **fs category translation** folds Balancing, Reimbursable and the retired helva budget into misc discretionary. They act as clearing categories, and task 12.01 decides whether each is an expense or a clearing account.
-08. **AM.45** Real Estate and Securities sat outside the personal cost center in account `01`. Task 12.01 maps Securities into investment P and L, IS.02, and Real Estate by what each entry records.
+07. **SC.42** is the explicit subcategory for discretionary spending that no specific subcategory covers. Every entry names its subcategory, so no line is a catch-all computed from what the others leave.
+08. **a new subcategory** belongs to a category, which carries its section, so it reaches a section with no further mapping.
 
 ### Retirement contributions
 
-This block mirrors the CPF contributions tracking of the **fs financial statements** and the **fs samples**, for any retirement fund such as the Central Provident Fund (CPF) accounts. It is informational, and its lines are not added into net income: the employee share is already inside gross salary and the employer share inside PS.04.
+This block tracks the contributions to retirement funds. It is informational, and its lines are not added into net income: the employee share is already inside gross salary and the employer share inside PS.04.
 
 | id    | line                  | definition                                         |
 | ----- | --------------------- | -------------------------------------------------- |
@@ -426,7 +374,7 @@ This block mirrors the CPF contributions tracking of the **fs financial statemen
 | RC.03 | total contributions   | RC.01 + RC.02                                      |
 | RC.04 | one line per fund     | the RC.03 amount that landed on that fund          |
 
-01. **RC.01** is the sum of the positive entries on `retirement` accounts that belong to salary transactions, per CE.08, plus transfers into `retirement` accounts from other accounts in net worth. The transfers cover migrated account `01` history, which booked the employee share as a transfer, and any voluntary top-up.
+01. **RC.01** is the sum of the positive entries on `retirement` accounts that belong to salary transactions, per CE.08, plus transfers into `retirement` accounts from other accounts in net worth, such as a voluntary top-up.
 02. **RC.04** shows one line per `retirement` account. The fund lines sum to RC.03 exactly, so the block shows how the contributions split across funds.
 03. the block shows only for a user with at least one `retirement` account.
 
@@ -434,7 +382,7 @@ This block mirrors the CPF contributions tracking of the **fs financial statemen
 
 ### Balance sheet layout
 
-The balance sheet reads top to bottom as five blocks, as in the **fs samples**.
+The balance sheet view reads top to bottom as five blocks. Each row is a line of the [Statement data model](#statement-data-model) or a view line of the [Presentation view](#presentation-view).
 
 ```text
 Balance sheet
@@ -476,9 +424,7 @@ Balance sheet
 
 ### Account types
 
-The account type is the balance sheet subsection, the asset subcategory of the **fs account classification**. Every account in net worth carries one type, and each type belongs to one section. This settles WI.07.
-
-The seven types of the **fs account classification** carry over by name, and RedBooks adds `clearing` for the cost center.
+The account type is the balance sheet subsection. Every account in net worth carries one of eight types, and each type belongs to one section. This settles WI.07.
 
 | id    | account type    | section                 | subsection    | roles                         |
 | ----- | --------------- | ----------------------- | ------------- | ----------------------------- |
@@ -491,30 +437,16 @@ The seven types of the **fs account classification** carry over by name, and Red
 | TY.07 | investment      | liquid investments      | none          | see note 05                   |
 | TY.08 | retirement      | illiquid and retirement | none          | see note 06                   |
 
-01. **TY.01** holds physical cash and stored value the user owns: transit cards, prepaid cards and e-money wallets, as the accounts table of the **fs category translation** files them. The **fs samples** list some stored value under misc credit, and RedBooks follows the accounts table.
-02. **TY.03** is the cash account of an investment, per the savings account rules of the **fs account classification**: brokerage cash, peer lending cash and an exchange wallet. Its balance can sit on either side of zero, so its section follows its sign at each balance date. A positive or zero balance sits in cash and bank accounts under savings accounts, and a negative one in credit under other credit. It is the only type whose section depends on its balance.
-03. **TY.04** is new in RedBooks. **financial-statements 010** left its cost center off the balance sheet, since it closed to zero every month. A cost center returns to zero once each split is itemised, per AR.07, but a split whose records span a month end, such as DQ.14 of the **homebudget data review**, leaves a balance for a few days, and the line shows it.
-04. **TY.06** holds every other liability and every claim the user holds on a third party: loans, bill accounts, the household share account, tax payable, security deposits and receivables from friends. The **fs account classification** files credit extended to third parties as other credit, such as the household settlement account and tax payable in its accounts table, and RedBooks keeps that rule. Each balance keeps its sign, so a deposit or receivable adds to the section and a loan or bill reduces it.
-05. **TY.07** holds the position accounts of investments: brokerage and depository positions, peer lending notes, a precious metal holding and a crowdfunding stake, as the accounts table of the **fs category translation** files them.
-06. **TY.08** holds retirement funds and retirement brokerage accounts. A retirement fund that also pays medical bills directly, such as CPF Medisave, stays `retirement`, per the **fs category translation**.
-07. the HomeBudget type of an account does not decide its RedBooks type. The **homebudget data review** assigns each account its type in its account mapping: the registry type for an account `01` account or its account `02` pair, and the type below for an account of that kind.
-
-| id    | data review class | roles                                     | account type                       |
-| ----- | ----------------- | ----------------------------------------- | ---------------------------------- |
-| TM.01 | AT.01, AT.02      | cost center                               | clearing                           |
-| TM.02 | AT.03             | bank, cash, stored value, investment cash | bank, wallet cash, savings         |
-| TM.03 | AT.04             | deposit                                   | other credit                       |
-| TM.04 | AT.05             | investment position                       | investment                         |
-| TM.05 | AT.06             | card, loan, bill, household share, tax    | credit card, other credit          |
-| TM.06 | AT.07             | brokerage cash, stored value, receivable  | savings, wallet cash, other credit |
-| TM.07 | AT.08             | retirement fund, position, holdings       | retirement, investment             |
-| TM.08 | AT.09             | counterparty outside net worth            | none, off the balance sheet        |
-
-In account `02`, M2.01 and M2.03 are bank accounts, M2.02, M2.08 and M2.09 wallet cash, M2.04 clearing, M2.05 a savings account, M2.06 a credit card, M2.07, M2.10 to M2.13, M2.15 and M2.16 other credit, and M2.14 an investment. The account `01` assignment follows TM.01 to TM.08 and the accounts table of the **fs category translation**, and the **review outputs** of the **homebudget data review** record it per account.
+01. **TY.01** holds physical cash and stored value the user owns: transit cards, prepaid cards and e-money wallets.
+02. **TY.03** is the cash account of an investment: brokerage cash, peer lending cash and an exchange wallet. Its balance can sit on either side of zero, so its section follows its sign at each balance date. A positive or zero balance sits in cash and bank accounts under savings accounts, and a negative one in credit under other credit. It is the only type whose section depends on its balance.
+03. **TY.04** is a cost center. A cost center returns to zero once each split is itemised, per AR.07, but a split whose records span a month end leaves a balance for a few days, and the line shows it.
+04. **TY.06** holds every other liability and every claim the user holds on a third party: loans, bill accounts, a household share account, tax payable, security deposits and receivables from friends. Each balance keeps its sign, so a deposit or receivable adds to the section and a loan or bill reduces it.
+05. **TY.07** holds the position accounts of investments: brokerage and depository positions, peer lending notes, a precious metal holding and a crowdfunding stake.
+06. **TY.08** holds retirement funds and retirement brokerage accounts. A retirement fund that also pays medical bills directly stays `retirement`.
 
 ### Net worth movement
 
-The opening block reconciles the two statements, as the summary rows of the **fs samples** do.
+The opening block reconciles the two statements.
 
 | id    | line                        | formula                                  |
 | ----- | --------------------------- | ---------------------------------------- |
@@ -526,7 +458,7 @@ The opening block reconciles the two statements, as the summary rows of the **fs
 | NM.06 | closing net worth           | NM.05 + NM.04                            |
 
 01. **NM.02** is the sum of the opening balance equity entries of AR.10 on accounts in net worth, dated in the month. It is non-zero only in a month where an account enters the books.
-02. a reconciled balance point that the user or the migration moves changes the balances it covers. It is not a movement of the month: it rewrites history, and the snapshots it covers go stale, per the financial statements milestone of the **release milestones**.
+02. a reconciled balance point that moves changes the balances it covers. It is not a movement of the month: it rewrites history, and the snapshots it covers go stale, per the financial statements milestone of the **release milestones**.
 03. **NM.03** is the net of transfers between accounts in net worth and accounts outside it, on the net worth side, less any income and expense entries posted on accounts outside net worth. It is zero for a user with no accounts outside net worth.
 04. **NM.06** equals NW.01 of the same month exactly, per CK.03.
 
@@ -549,7 +481,7 @@ Each line is the signed sum of the lines beneath it, in the reporting currency.
 
 ### Net cash transfers
 
-This informational block mirrors the cash transfers rows of the **fs samples**. It shows the month's transfers that move value between balance sheet sections or currencies. It never changes net worth.
+This informational block shows the month's transfers that move value between balance sheet sections or currencies. It never changes net worth.
 
 | id    | line                      | definition                                     |
 | ----- | ------------------------- | ---------------------------------------------- |
@@ -564,11 +496,11 @@ This informational block mirrors the cash transfers rows of the **fs samples**. 
 
 ### Account detail
 
-Account detail lists every account in net worth under its section and subsection, in the order of the table in [Account types](#account-types), then in the user's account order. Each account line shows its balance at the date in the reporting currency. A foreign currency account also shows its balance and its currency code, as in the **fs samples**. Each subsection and section shows its total in the reporting currency. Its drill down opens the account's ledger for the month, per WF.14.04 of the **workflows**.
+Account detail lists every account in net worth under its section and subsection, in the order of the table in [Account types](#account-types), then in the user's account order. Each account line shows its balance at the date in the reporting currency. A foreign currency account also shows its balance and its currency code. Each subsection and section shows its total in the reporting currency. Its drill down opens the account's ledger for the month, per WF.14.04 of the **workflows**.
 
 ## Currency translation and forex
 
-The rate rules follow the translation policy of the **fs forex design**. The rate source, its storage and the user's overrides belong to the multi currency and forex topic, 04.08. The rounding of one converted amount follows 02.OD.01 of the **test cases**, set by that topic.
+The rate source, its storage and the user's overrides belong to the multi currency and forex topic, 04.08. The rounding of one converted amount follows 02.OD.01 of the **test cases**, set by that topic.
 
 01. **CT rate on a transaction date.** The rate for a currency pair on a date is the user's recorded rate for that date where one exists, and otherwise the stored fetched rate, per AR.12 and 02.FS.07.
 02. **income and expense lines** convert each entry at the rate on its transaction date, and round each converted entry to the reporting currency's decimal places before summing. Both entries of an income or expense transaction are in one currency, so they convert to the same amount and still balance. This adopts the assumption of 02.OD.02 in the **test cases**.
@@ -589,18 +521,36 @@ FX   = E_r - B_r - T_r
 09. **never posted.** FX exists only in the statement build and its snapshot, per the response to requirements audit item 01.04.07 in the **release milestones**. The ledger holds no forex entry before or after a build.
 10. **a change of reporting currency** rebuilds every line from the ledger with the new pair's rates. Both the opening value of a regenerated year's first month and every FX figure follow from the same rules.
 
-## Presentation
+## Presentation view
+
+The presentation view is what the statement page and the CSV export show. A build assembles it from the detail and summary lines of one snapshot version, or of each month's current version for a year view, together with the category model and the account types. The API returns the view rows with signed amounts, and the page and the CSV apply PR.01.
+
+| id    | row field  | value                                                    |
+| ----- | ---------- | -------------------------------------------------------- |
+| PV.01 | line key   | the key of a data model line, or of a view line          |
+| PV.02 | label      | the current name of the item, or the line's name here    |
+| PV.03 | level      | the depth of the row in the layout                       |
+| PV.04 | parent key | the key of the row it sits under in the layout           |
+| PV.05 | row kind   | detail, total, derived or view                           |
+| PV.06 | values     | one signed amount per column of the view                 |
+
+01. **PV.07 layout.** Rows follow the layout trees of [Income statement layout](#income-statement-layout) and [Balance sheet layout](#balance-sheet-layout). Detail rows sit under their category, by the category's section, or under their subsection, by the account's type, in the order note 05 of [Income statement sections](#income-statement-sections) and [Account detail](#account-detail) set.
+02. **PV.08 one line, more than one row.** A data model line can show in both statements. SB.05 is the income statement's forex gain or loss and the balance sheet's forex gain or loss row.
+03. **PV.09 view lines** are computed by the view from the months it shows: the year total, the monthly average, TE.05 for a year or a quarter, and the rate row. They carry row kind `view` and are never stored.
+04. **PV.10 drill down** goes from a detail row to its transactions, and from a total or derived row to the rows beneath it.
+
+The presentation rules apply to every row of the view.
 
 01. **PR.01 expense flip.** The income statement shows every expense line, every expense category and section total, and PI.03 taxes paid, as positive amounts. That flip is the last step of rendering the page and the CSV export, per AR.18. Income lines and the mixed derived lines, SB.01 to SB.05, PI.04 and the savings lines, keep their sign.
 02. **PR.02 no flip on the balance sheet.** Every balance sheet line shows its signed value, per note 03 of [Net worth and its sections](#net-worth-and-its-sections).
 03. **PR.03 decimals.** Amounts show to the reporting currency's decimal places. TE.05 shows two decimals.
-04. **PR.04 year view columns.** The income statement year view shows the year total, the monthly average, the December of the year before, and the twelve months. The monthly average is the year total divided by the number of months of the year that have started. The balance sheet year view shows the December of the year before and the twelve months. A rate row above the months shows each month-end rate of every foreign currency the user holds, as the **fs samples** show the USD rate.
+04. **PR.04 year view columns.** The income statement year view shows the year total, the monthly average, the December of the year before, and the twelve months. The monthly average is the year total divided by the number of months of the year that have started. The balance sheet year view shows the December of the year before and the twelve months. A rate row above the months shows each month-end rate of every foreign currency the user holds.
 05. **PR.05 headings.** Every view states its user, its reporting currency, its period and its source, the snapshot version or month to date, per 02.FS.11 and the **statements skill**.
 06. **PR.06 CSV export.** One row per line, in layout order, with the line key, the line label, the level, and one column per period of the view. Values are the rendered figures of PR.01, as decimal strings, per 02.FS.10.
 
 ## Line keys
 
-Each line in a snapshot, an API response and a CSV row carries a stable key, so a re-run compares line by line and a stale line names what drifted.
+Each line of the data model and each row of the view carries a stable key, so a re-run compares line by line and a stale line names what drifted.
 
 | id    | line kind           | key                                       |
 | ----- | ------------------- | ----------------------------------------- |
@@ -615,11 +565,11 @@ Each line in a snapshot, an API response and a CSV row carries a stable key, so 
 | LK.09 | forex of an account | `bs.fx.<account id>`                      |
 
 01. the ids are the database ids of the user's own records, so a renamed category keeps its key.
-02. each line also carries its kind, its label at build time, its parent key and its signed amount. The data model topic, 04.05, sets the columns.
+02. the detail and summary line tables of the [Statement data model](#statement-data-model) hold each line's other columns. The [Presentation view](#presentation-view) adds the label, level and parent of each row.
 
 ## Checks
 
-Every statement build runs these checks. A failed check fails the build with its own named cause, and the snapshot job records the failure, per WF.15 of the **workflows**. They mirror the validation gates of the **fs financial statements**.
+Every statement build runs these checks. A failed check fails the build with its own named cause, and the snapshot job records the failure, per WF.15 of the **workflows**.
 
 | id    | check                 | pass condition                                      |
 | ----- | --------------------- | --------------------------------------------------- |
@@ -718,7 +668,7 @@ May's balance sheet closed at a net worth of 78,592.50. In June the user also se
 #### SX.05 retirement contributions and net cash transfers for June
 
 01. RC.04 from SX.02: fund A 720.00 + 540.00 = 1,260.00, fund B 240.00 + 180.00 = 420.00, fund C 420.00. The three sum to RC.03, 2,100.00.
-02. the June contributions are income inflows, so CT.01 retirement contributions is 0.00. A migrated account `01` month that booked the employee share as transfers shows it in both RC.01 and CT.01.
+02. the June contributions are income inflows, so CT.01 retirement contributions is 0.00. A month that books the employee share as transfers into the funds shows it in both RC.01 and CT.01.
 03. no buy, sell or transfer between currencies took place, so CT.04 net cash transfers is 0.00. The unrealised gain on the position is income, and it shows in SB.04.
 
 ## Decisions settled and handoffs
@@ -733,14 +683,12 @@ These decisions rest on other topics. Each topic confirms its part before this t
 
 | id    | topic                       | handoff                                                   |
 | ----- | --------------------------- | --------------------------------------------------------- |
-| HO.01 | 04.05 data model            | category section, account type, snapshot line columns     |
+| HO.01 | 04.05 data model            | category section, account type, detail and summary lines  |
 | HO.02 | 04.06 accounts              | loss categories under AR.13, balance before a first point |
 | HO.03 | 04.08 multi currency, forex | rate rule of 02.OD.02, rounding of 02.OD.01               |
-| HO.04 | 04.04 homebudget review     | account type per account, subcategory per income record   |
-| HO.05 | 04.03 front end pages       | summary blocks first, year view columns, rate row         |
-| HO.06 | test cases                  | update 02.FS.01, 02.FS.04, 02.UI.23, 02.UI.24, remove OD  |
+| HO.04 | 04.03 front end pages       | summary blocks first, year view columns, rate row         |
+| HO.05 | test cases                  | update 02.FS.01, 02.FS.04, 02.UI.23, 02.UI.24, remove OD  |
 
-01. **HO.01** the category carries a required section of IS.01 to IS.05. The account carries a required type of TY.01 to TY.08 and an in-net-worth flag. The snapshot line carries the fields of [Line keys](#line-keys).
-02. **HO.04** the eight account `02` income records map by name: salary records to PS.01, the government rebate to PS.06 and the card rebate to PS.05.
-03. **HO.05** PG.23, PG.25 and PG.26 of the **front end pages** list net worth and net income after the detail. This doc puts the summary blocks first, as the **fs samples** do, and adds the monthly average, the opening December column and the rate row.
-04. **HO.06** 02.FS.01 holds categories with no section. Its ledger gains sections so its net income also checks SB.01.
+01. **HO.01** the category carries a required section of IS.01 to IS.05. The account carries a required type of TY.01 to TY.08 and an in-net-worth flag. The snapshot version holds the detail and summary line tables of the [Statement data model](#statement-data-model).
+02. **HO.04** PG.23, PG.25 and PG.26 of the **front end pages** list net worth and net income after the detail. This doc puts the summary blocks first, and adds the monthly average, the opening December column and the rate row.
+03. **HO.05** 02.FS.01 holds categories with no section. Its ledger gains sections so its net income also checks SB.01.
