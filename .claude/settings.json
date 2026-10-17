@@ -12,14 +12,14 @@
       "Bash(git branch -D*)",
       "Bash(cat *.env*)",
       "Bash(cat *.secrets*)",
-      "Bash(cat *cookies_mcf*)",
       "Read(./.env)",
-      "Read(./.secrets)",
-      "Read(**/cookies_mcf.json)",
+      "Read(./.secrets/**)",
       "Edit(./.env)",
-      "Edit(./.secrets)",
+      "Edit(./.secrets/**)",
+      "Edit(./data/**)",
       "Write(./.env)",
-      "Write(./.secrets)"
+      "Write(./.secrets/**)",
+      "Write(./data/**)"
     ]
   }
 }

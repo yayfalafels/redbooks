@@ -6,18 +6,18 @@
 - [References](#references)
 - [Requirements](#requirements)
 - [Agent skills customization](#agent-skills-customization)
-- [Test strategy](#test-strategy)
-- [Test cases](#test-cases)
+- [Test strategy and cases](#test-strategy-and-cases)
 - [Design](#design)
 - [Agent skills implement customization](#agent-skills-implement-customization)
 - [Local dev and test env](#local-dev-and-test-env)
+- [Schema and account 02 seed](#schema-and-account-02-seed)
 - [Validation utilities](#validation-utilities)
-- [Setup database seed data](#setup-database-seed-data)
 - [Oauth login](#oauth-login)
+- [Audit skills checkpoint](#audit-skills-checkpoint)
 - [Currency model](#currency-model)
 - [Txn and accounts](#txn-and-accounts)
 - [Financial statements](#financial-statements)
-- [Data migrate](#data-migrate)
+- [Homebudget account 01 migrate](#homebudget-account-01-migrate)
 - [Audit skills promote learning](#audit-skills-promote-learning)
 - [Mkdocs documentation](#mkdocs-documentation)
 - [Publish and release](#publish-and-release)
@@ -26,31 +26,43 @@
 
 The `seq` column determines the implementation order
 
-| id | release | seq | status   | feature                                  |
-| -- | ------- | --- | -------  | ---------------------------------------- |
-| 01 | 020     | 01  | closed   | requirements                             |
-| 05 | 020     | 02  | open     | agent skills customization               |
-| 02 | 020     | 03  | pending  | test strategy                            |
-| 03 | 020     | 04  | pending  | test cases                               |
-| 04 | 020     | 05  | pending  | design                                   |
-| 16 | 020     | 06  | pending  | agent skills implement customization     |
-| 06 | 020     | 07  | pending  | local dev and test env                   |
-| 08 | 020     | 08  | pending  | validation utilities                     |
-| 07 | 020     | 09  | pending  | setup database seed data                 |
-| 09 | 020     | 10  | pending  | oauth login                              |
-| 17 | 020     | 11  | pending  | currency model                           |
-| 10 | 020     | 12  | pending  | txn and accounts                         |
-| 11 | 020     | 13  | pending  | financial statements                     |
-| 12 | 020     | 14  | pending  | data migrate                             |
-| 13 | 020     | 15  | pending  | audit skills promote learning            |
-| 14 | 020     | 16  | pending  | mkdocs documentation                     |
-| 15 | 020     | 17  | pending  | publish and release                      |
+| id | release | seq | status  | feature                              |
+| -- | ------- | --- | ------- | ------------------------------------ |
+| 01 | 020     | 01  | closed  | requirements                         |
+| 05 | 020     | 02  | closed  | agent skills customization           |
+| 02 | 020     | 03  | open    | test strategy and cases              |
+| 04 | 020     | 04  | open    | design                               |
+| 16 | 020     | 05  | pending | agent skills implement customization |
+| 06 | 020     | 06  | pending | local dev and test env               |
+| 07 | 020     | 07  | pending | schema and account 02 seed           |
+| 08 | 020     | 08  | pending | validation utilities                 |
+| 09 | 020     | 09  | pending | oauth login                          |
+| 18 | 020     | 10  | pending | audit skills checkpoint              |
+| 17 | 020     | 11  | pending | currency model                       |
+| 10 | 020     | 12  | pending | txn and accounts                     |
+| 11 | 020     | 13  | pending | financial statements                 |
+| 12 | 020     | 14  | pending | homebudget account 01 migrate        |
+| 13 | 020     | 15  | pending | audit skills promote learning        |
+| 14 | 020     | 16  | pending | mkdocs documentation                 |
+| 15 | 020     | 17  | pending | publish and release                  |
+
+01. milestone `03`, test cases, is merged into milestone `02`, test strategy and cases. Milestone `18`, audit skills checkpoint, is new. The structure follows the Lessons to apply to the planning documents section of the **lessons learned**, entry PD.01.
 
 ## References
 
 - **release roadmap**: [../../release-roadmap.md](../../release-roadmap.md)
 - **requirements**: [../../requirements.md](../../requirements.md)
 - **release milestones**: [020-release-milestones.md](020-release-milestones.md)
+- **lessons learned**: [easymcf-lessons-learned.md](design/easymcf-lessons-learned.md)
+- **accounting rules**: [accounting-rules.md](design/accounting-rules.md)
+- **homebudget accounts**: [homebudget-accounts.md](design/homebudget-accounts.md)
+- **agent skills tracker**: [020.05-agent-skills-customization.md](features/020.05-agent-skills-customization.md)
+- **test strategy tracker**: [020.02-test-strategy.md](features/020.02-test-strategy.md)
+- **test strategy**: [test-strategy.md](design/test-strategy.md)
+- **test cases**: [test-cases.md](design/test-cases.md)
+- **workflows**: [workflows.md](design/workflows.md)
+- **data flows**: [data-flows.md](design/data-flows.md)
+- **front end pages**: [front-end-pages.md](design/front-end-pages.md)
 - **financial-statements 010**: [https://github.com/yayfalafels/financial-statements/](https://github.com/yayfalafels/financial-statements/)
 - **homebudget wrapper**: [https://github.com/yayfalafels/homebudget](https://github.com/yayfalafels/homebudget)
 - **requirements analysis**: [../../requirements-analysis-chatgpt.md](../../requirements-analysis-chatgpt.md)
@@ -63,14 +75,14 @@ The `seq` column determines the implementation order
 
 ## Requirements
 
-The requirements milestone sets what `0.2.0` delivers and why. It records the lessons from **financial-statements 010** and easyMCF, fixes the scope in the **release roadmap**, audits that scope, and writes the release notes in the release page. It captures a snapshot of the user's HomeBudget accounts and transactions, exported from the HomeBudget app into the gitignored `data/` folder. The snapshot and the **homebudget wrapper** source code are the two sources of HomeBudget information for the release. The snapshot supplies the data, and the wrapper source code documents how HomeBudget structures accounts, transactions, transfers and currencies. Figures available only in the live HomeBudget app are written by the user into two files alongside the export. The account balances file holds the HomeBudget accounts with their starting balances, and the opening balance of each month and the closing balance on the snapshot date for select accounts. The fx transfers file holds both sides of every transfer between currencies, with the amount in each currency and the exchange rate HomeBudget applied. The automated validation reads both files as expected values.
+The requirements milestone sets what `0.2.0` delivers and why. It records the lessons from **financial-statements 010** and easyMCF, fixes the scope in the **release roadmap**, audits that scope, and writes the release notes in the release page. It captures a snapshot of the user's HomeBudget accounts and transactions, exported from the HomeBudget app into the gitignored `data/` folder. The snapshot and the **homebudget wrapper** source code are the two sources of HomeBudget information for the release. The snapshot supplies the data, and the wrapper source code documents how HomeBudget structures accounts, transactions, transfers and currencies. Figures available only in the live HomeBudget app are written by the user into two files alongside the export. The account balances file holds the HomeBudget accounts with their starting balances, and the opening balance of each month and the closing balance on the snapshot date for select accounts. The fx transfers file holds both sides of every transfer between currencies, with the amount in each currency and the exchange rate HomeBudget applied. On 2026-10-17 the export and both files were removed as stale. A dated snapshot of the account `02` HomeBudget database replaced them as the source, and the automated validation reads HomeBudget's own figures from it, per the HomeBudget data review.
 
 **closure criteria**
 
 01. the **release roadmap** lists every `0.2.0` feature and the release each later feature belongs to.
 02. every requirements audit issue has a recorded response, and the response is applied to the release notes and the roadmap.
 03. the release notes describe the ledger, categories, multiple currencies, financial statements, users, mobile layout and HomeBudget history for `0.2.0`.
-04. the HomeBudget snapshot in `data/` holds the full transaction report, the account balances file and the fx transfers file.
+04. the HomeBudget snapshot in `data/` holds the full transaction report, the account balances file and the fx transfers file. The account `02` database snapshot superseded all three on 2026-10-17.
 05. every milestone in this doc has a description and closure criteria.
 
 **tasks**
@@ -85,7 +97,7 @@ The requirements milestone sets what `0.2.0` delivers and why. It records the le
 | 01.06 | 06  | closed   | homebudget snapshot                      |
 | 01.07 | 07  | closed   | release notes review                     |
 | 01.09 | 08  | closed   | homebudget balances snapshot             |
-| 01.08 | 09  | open     | deliverables and closing criteria        |
+| 01.08 | 09  | closed   | deliverables and closing criteria        |
 
 __01.04 (closed) requirement audit__
 
@@ -257,7 +269,7 @@ Examples of generic skills for `0.2.0` are:
 
 The lessons come from the easyMCF release roadmap, release milestones and design audit issues, its feature trackers, assessments and issue logs, its agents and skills, and the saved Claude Code feedback memories for the easyMCF project. Each lesson lands in the generic skill it belongs to. A lesson about API design goes to `fastapi`, a lesson about milestone and tracker structure goes to `feature-implementation-guide`, and a lesson about writing style goes to `documentation-style`. Lessons specific to MCF scraping, the MCF site and AngularJS stay with easyMCF.
 
-Skills load in stages. The rules that apply every time go in the skill's `SKILL.md`, and detailed lessons and worked examples go in reference files in the skill folder. `SKILL.md` names each reference file and when to read it, so an agent reads a lesson at the moment it applies. A lessons inventory, `020-easymcf-lessons.md` in this release folder, lists each lesson with its source and the skill and file it moved to.
+Skills load in stages. The rules that apply every time go in the skill's `SKILL.md`, and detailed lessons and worked examples go in reference files in the skill folder. `SKILL.md` names each reference file and when to read it, so an agent reads a lesson at the moment it applies. The **lessons learned** holds every lesson with its evidence, and the Lesson trace of the **agent skills tracker** records the skill, agent or planning document each lesson lands in.
 
 **closure criteria**
 
@@ -266,13 +278,14 @@ Skills load in stages. The rules that apply every time go in the skill's `SKILL.
 03. every skill with RedBooks-specific content carries the `redbooks-` prefix.
 04. the `webscraping` skill and the MCF-specific content are removed from `.claude/`.
 05. a search of `.claude/` for easyMCF, MCF, Flask, SQLite and AngularJS returns no matches.
-06. the lessons inventory lists every lesson from the easyMCF sources above, with its destination skill and file, or a reason it stays with easyMCF.
+06. every lesson in the **lessons learned** has a destination in the Lesson trace of the **agent skills tracker** and lands there, and every finding that stays with easyMCF is listed in its Not transferred section.
 07. every transferred lesson is written in RedBooks stack terms and readable with the easyMCF repo absent.
 08. every reference file in a skill folder is named in that skill's `SKILL.md`, with when to read it.
+09. every agent carries the shared boundaries block, and every lesson to be learned has an entry in an `open-lessons` file with its status.
 
-## Test strategy
+## Test strategy and cases
 
-The test strategy sets how every part of the `0.2.0` release is proven to work as delivered. It covers the ledger and money rules, the data model, the API, the web app in its phone layout, sign-in and data ownership, exchange rates, financial statements, the HomeBudget migration and the local environment. The test cases milestone turns this strategy into concrete cases, and every feature milestone builds and validates against it.
+The test strategy sets how every part of the `0.2.0` release is proven to work as delivered. It covers the ledger and money rules, the data model, the API, the web app in its phone layout, sign-in and data ownership, exchange rates, financial statements, the HomeBudget migration and the local environment. The milestone also writes the case catalogue that turns the strategy into concrete cases, and every feature milestone builds and validates against both.
 
 **Guiding principle**
 
@@ -280,25 +293,32 @@ Each component is tested where its logic lives, in isolation, before the tests o
 
 **Component silos**
 
-Each component has its own silo, a way to test it directly with no other component's correctness as a precondition and no live network call.
+Each component has its own silo, a way to test it directly with no other component's correctness as a precondition. Silo protocols make no live network call.
 
-01. **ledger and money**: unit tests on the money type, exact decimal arithmetic, ledger balance calculation, expense, income and transfer posting rules, split purchases and transfers between currencies.
-02. **data model and database**: schema migrations, constraints and round trips through a direct database utility, run against a temporary PostgreSQL database before any API exists on top.
+01. **ledger and money**: unit tests on the money type, exact decimal arithmetic, the sign of every entry, balances from reconciled balance points, expense, income, refund and transfer posting rules, billing accounts, split purchases, card foreign exchange fees and transfers between currencies.
+02. **data model and database**: the schema build, constraints and round trips through a direct database utility, run against a temporary PostgreSQL database before any API exists on top. During `0.2.0` development the schema is rebuilt and the seed reloaded, and versioned forward migrations are tested in the homebudget account 01 migrate milestone.
 03. **backend API**: endpoint cases written as data, each tagged with the requirement it proves, run through the FastAPI test client. Each endpoint covers required fields, validation errors, missing records, the happy path, a request without a session and a request for another user's record.
-04. **exchange rates**: rate fetching and storage tested against a stubbed rate API, and conversion and forex gain or loss tested against fixed stored rates.
+04. **exchange rates**: rate fetching and storage tested against a stubbed rate API built from the responses the exchange rate API probe saved, and conversion and forex gain or loss tested against fixed stored rates. A live run then confirms the real rate API answers as the stub does.
 05. **financial statements**: the income statement, the balance sheet, the forex gain or loss line, drill down and CSV export, tested at the service layer against known ledger data.
 06. **frontend**: the React pages tested in a mobile viewport with Playwright, with every API call answered from canned responses, so a rendering defect and a backend defect fail in different silos.
-07. **authentication and ownership**: OAuth sign-in against a stub identity provider, with two seeded users in every database, so a data leak between users always has a second user to show up in.
-08. **HomeBudget migration**: report parsing, account and category mapping, fx transfer matching and every migration rule, tested against the snapshot files.
+07. **authentication and ownership**: OAuth sign-in against a stub identity provider, with two seeded users in every database, so a data leak between users always has a second user to show up in. A live run checks the real provider's discovery document and sign-in redirect without signing in, and the full live sign-in is the user's own check.
+08. **HomeBudget migration**: two loads. The account `02` seed load covers snapshot reading, account and category mapping, the device match key and the reference checks against HomeBudget's own figures in the snapshot, and its cases belong to the schema and account 02 seed milestone. The account `01` migration covers forward migrations, the second opt-in, legacy category mapping, upsert matching and its reference figures, and its cases belong to its own milestone.
 
 **Case selection**
 
-01. **traceability**: every requirement in the release notes has at least one tagged test case. A requirement with no case counts as untested.
+01. **traceability**: every requirement in the release notes has at least one tagged test case. A requirement with no case counts as untested. Coverage of each feature milestone's closure criteria is completed in that feature's tracker, once its design closes.
 02. **closed vocabularies**: every account type, transaction kind and transfer kind has a reachable case, and the seed data holds at least one row of each.
 03. **boundaries**: every date and period rule gets a case on each side of its boundary, such as a transaction on the first and last day of a statement period.
-04. **determinism**: no test depends on wall-clock time, a live network call or a fixed sleep. Time comes through a single injectable clock and exchange rates come from stored or stubbed values.
+04. **determinism**: no silo test depends on wall-clock time, a live network call or a fixed sleep. Time comes through a single injectable clock and exchange rates come from stored or stubbed values. A live protocol depends on the network by design and runs under its latency budget.
 05. **silo-first order**: a feature writes its cases cheapest first, from unit and database cases through API and frontend cases, and adds an end-to-end case where a real integration risk remains.
 06. **ownership leaks**: every resource is tested as a second user against the first user's records, and every result is a not found response or an empty list.
+
+**Run rules**
+
+01. **live order**: automated protocols run against the stubs first, then live for everything except irreversible writes. The full live OAuth flow with its writes is the user's own check.
+02. **latency budgets**: every test has an expected latency budget and raises a timeout when it is exceeded, a few seconds for local work and 30 seconds for an internet API call. Load variance is never an accepted close.
+03. **feature-scoped test sets**: each feature owns its test set, siloed unit tests first and integration tests after. The end-to-end regression run grows sublinearly, about 1x, 1.5x and 2x of the first feature's run at features 1, 2 to 3, and 10.
+04. **settings**: tests read settings from `.env` through the app's settings object, and every run reports its effective mode.
 
 **Independent verification layers**
 
@@ -311,44 +331,41 @@ Each feature milestone validates its closure criteria through independent layers
 
 Tests run in order of speed and information value. Unit, database and API cases run first, then browser cases, then the human pass. When failures appear, independent first failures are separated from the failures they cause and fixed one at a time, and the full suite then runs again as confirmation.
 
-**Reference data from HomeBudget**
-
-The HomeBudget snapshot is the reference data behind the oracle layer for the ledger, the statements and the migration. The budget section of the report gives each category's expense total for the period, and the income statement matches these totals. The account balances file gives monthly opening balances and the snapshot date closing balance for select accounts, and the ledger balances and the balance sheet match these values. The fx transfers file gives both amounts of every transfer between currencies, and each transfer posts exactly those amounts. The seed script writes these expected values as fixtures next to the seed data, under the same made-up names, with amounts and dates unchanged.
-
 **closure criteria**
 
 01. the test strategy doc defines each component silo, its tools, its scope and the data it runs against.
-02. every requirement in the release notes maps to at least one silo, and the test cases milestone has a traceability rule to follow.
+02. every requirement in the release notes maps to at least one silo, and the case catalogue has a traceability rule to follow.
 03. the strategy defines the case selection rules, the independent verification layers and the test run order.
-04. the strategy defines how money amounts are asserted exactly to the decimal places of their currency and how exchange rates are stubbed and stored.
-05. the strategy defines the stub identity provider for OAuth and the two-user ownership tests.
-06. the strategy defines frontend testing with canned API responses in a mobile viewport, and the human pass on a tunnelled phone or in the mobile emulator.
-07. the strategy maps each HomeBudget snapshot file to the results it validates and defines the expected-value fixtures the seed script writes.
-08. the strategy defines the agent's build, test and debug loop, naming the narrowest silo to run first for each kind of change.
-09. strategies and tools exist for agent to autonomously validate and self-correct errors from all of the component features of the released product, including: db, api endpoints and front end ui. human validation checks are secondary checks against implementation which has already passed an agent run validation check.
+04. the strategy defines the live order, the latency budgets and the feature-scoped test sets of the run rules.
 
-## Test cases
+The strategy's sections on test data, money and exchange rate assertions, the stub identity provider, frontend testing, the agent loop, the validation utilities and the human pass are drafts that the milestones owning that work confirm: schema and account 02 seed, currency model, oauth login, validation utilities, and agent skills implement customization.
 
-This milestone writes the concrete test cases the test strategy scopes, organized by component silo. Each case names its requirement, its silo, its verification layer, its input data and its expected result. The cases cover every requirement in the release notes, the case selection rules in the test strategy, and the edge cases found in the HomeBudget snapshot, such as same-day identical expenses, transfers between currencies, USD expenses, deposit refunds and prepaid card top-ups.
+**Cases**
 
-**closure criteria**
+The case catalogue holds the concrete test cases the strategy scopes, organized by component silo. Each case names its requirement, its silo, its verification layer, its input data and its expected result. The cases cover every requirement in the release notes, the case selection rules above, and the edge cases found in the HomeBudget snapshot, such as same-day identical expenses, transfers between currencies, USD expenses, deposit refunds and prepaid card top-ups. Expected values come from oracles and data reads, never hand counts, and boundary cases account for library tolerances such as token clock leeway.
 
-01. the test cases doc lists every case with its requirement, silo, verification layer, input and expected result.
+The catalogue holds the release-level cases, the starting set known before the design. Full coverage of a feature's closure criteria can only be known once that feature's design exists. Each feature milestone copies its cases into its own tracker, reconciles them with its scope, data model and edit locations, and adds the cases its design reveals before its first implement step. The cross-cutting cases, such as the ownership matrix and the reference checks, stay in the catalogue.
+
+**cases closure criteria**
+
+01. the case catalogue lists every case with its requirement, silo, verification layer, input and expected result.
 02. every requirement in the release notes has at least one test case.
 03. every closed vocabulary value, date boundary and ownership rule named in the test strategy has a test case.
-04. every edge case recorded in the HomeBudget data review has a test case.
-05. every feature milestone with a user-visible surface has a human validation checklist.
-06. expected money amounts are stated exactly, to the decimal places of the currency of the account or statement they belong to.
+04. every feature milestone with a user-visible surface has a human validation checklist.
+05. expected money amounts are stated exactly, to the decimal places of the currency of the account or statement they belong to.
+06. every accounting oracle checks each entry's sign against its event as well as the balance, and computes every check from its stated figures.
+07. the strategy requires every regression case to be shown to fail without its fix.
+08. the catalogue sets the step by which each feature milestone's tracker copies its cases, reconciles them with its design and adds the cases its design reveals, so every closure criterion of that milestone has a case before implementation.
 
 ## Design
 
 The design settles how RedBooks meets the requirements before any feature code is written. It runs in three stages, each building on the one before.
 
 01. **user experience**: the design starts from the user workflows, such as recording a transaction, transferring between accounts, reviewing an account ledger and reporting financial statements. The data flows follow from the workflows, naming every data source, store and output, from manual entry and the HomeBudget snapshot through the database to the statements and CSV exports. The front end pages then set the phone-layout screens, navigation and interactions that carry out each workflow.
-02. **accounting model**: the HomeBudget data review works from the snapshot in `data/` and the **homebudget wrapper** source code. Together with the workflows, it forms the basis of the accounting data model. The model defines the general ledger with its expense, income and transfer models, accounts and account types, the consolidated category model, multiple currencies with the forex gain or loss, and the financial statements. The review maps HomeBudget accounts, account types, categories and transfer patterns into this model and records the migration rules.
+02. **accounting model**: the HomeBudget data review works from the account `02` and account `01` HomeBudget databases, the **homebudget wrapper** source code, and the questions in the **homebudget accounts** doc. The **accounting rules** set the signed entry vocabulary and posting model every accounting design doc follows. Together with the workflows, it forms the basis of the accounting data model. The model defines the general ledger with its expense, income and transfer models, accounts and account types, the consolidated category model, multiple currencies with the forex gain or loss, and the financial statements. The review maps HomeBudget accounts, account types, categories and transfer patterns into this model and records the migration rules.
 03. **system**: the architecture sets the components and how they interact, on the tech stack and repo layout. Users and authentication, networking and security, the API endpoints, the local dev env, the env variables and the docs publishing pipeline complete the design.
 
-Every design doc traces its decisions back to the requirements and forward to the test strategy and test cases.
+Every design doc traces its decisions back to the requirements and forward to the test strategy and its case catalogue. Each feature reconciles its own cases with the design before it is built.
 
 **closure criteria**
 
@@ -356,37 +373,41 @@ Every design doc traces its decisions back to the requirements and forward to th
 02. the workflows doc describes every user workflow in the release notes, step by step, with the pages and data each step uses.
 03. the data flows doc names every data source, store and output, and the workflow that moves data between them.
 04. the front end pages doc defines every page with its purpose, phone layout, fields, actions, navigation and the API calls it makes.
-05. the data model defines every entity with its fields, types, keys, constraints and ownership, including the general ledger, the expense, income and transfer models, accounts with opening balances, categories, exchange rates and users.
-06. the accounts, transactions, multi currency and forex, and financial statements docs define their rules and calculations in enough detail to write oracle test cases from them, including split purchases, transfers between currencies, the reporting currency setting, the rate source and storage, the rate applied to each statement line and the forex gain or loss.
-07. the HomeBudget data review maps every HomeBudget account, account type and category into the data model, records a migration rule for every data quality issue in the snapshot, defines the upsert match key for each record kind, and documents the report, account balances and fx transfers file formats.
+05. the data model defines every entity with its fields, types, keys, constraints and ownership, including the general ledger, the expense, income and transfer models, accounts with opening balances, categories, exchange rates and users. Ledger entries are signed amounts per the **accounting rules**. The schema rebuilds and reloads the seed during development, and versioned forward migrations start before the account `01` migration.
+06. the accounts, transactions, multi currency and forex, and financial statements docs define their rules and calculations in enough detail to write oracle test cases from them, including split purchases, transfers between currencies, the reporting currency setting, the rate source and storage, the rate applied to each statement line and the forex gain or loss. The multi currency doc follows the foreign currency entry model of AR.12 in the **accounting rules**.
+07. the HomeBudget data review maps every HomeBudget account, account type and category into the data model, records a migration rule for every data quality issue in both HomeBudget databases, defines the upsert match key for each record kind, and documents the HomeBudget database layout, the account `02` snapshot and the expected-value oracles. It answers the questions in the **homebudget accounts** doc, adds its edge cases to the case catalogue, and sets the reference figures the account `01` migration is checked against.
 08. the architecture doc sets every component, its responsibility and its interfaces, and the tech stack and repo layout docs fix the libraries, versions and folder structure the implementation follows.
-09. the users and authentication, and networking and security docs define the OAuth flow, session handling, per-user data scoping, the phone tunnel, and the handling of secrets and personal data.
-10. the API endpoints doc defines every endpoint with its method, path, request, response, errors and the ownership rule it enforces.
+09. the users and authentication, and networking and security docs define the OAuth flow, session handling, per-user data scoping, the phone tunnel, and the handling of secrets and personal data. Committed code, committed docs and the published site show no real account names, account numbers or personal details.
+10. the API endpoints doc defines every endpoint with its method, path, request, response, errors and the ownership rule it enforces, with one explicit router per resource and every write that carries invariants routed through a service.
 11. the local dev env and env variables docs define the Docker services, setup commands and every environment variable, and the docs publishing pipeline doc defines the documentation build and publish workflow.
-12. a design audit across the design docs, the requirements, the test strategy and the test cases has every finding resolved.
+12. a design audit across the design docs, the requirements, the test strategy and the case catalogue has every finding resolved.
+13. every accounting design doc follows the **accounting rules** and copies no example from the financial-statements accounting-logic skill.
+14. the exchange rate API is probed by a tracked script, run by the user, before the multi currency and forex topic closes, and its findings are saved as fixtures.
+15. each design topic that settles an open design input of the case catalogue updates every case that input affects, and removes the input from the catalogue, before the topic closes.
 
 **tasks**
 
 | id    | seq | status   | design topic                             |
 | ----- | --- | -------  | ---------------------------------------- |
-| 04.01 | 01  | pending  | workflows                                |
-| 04.02 | 02  | pending  | data flows                               |
-| 04.03 | 03  | pending  | front end pages                          |
-| 04.04 | 04  | pending  | homebudget data review                   |
+| 04.01 | 01  | open     | workflows                                |
+| 04.02 | 02  | open     | data flows                               |
+| 04.03 | 03  | open     | front end pages                          |
+| 04.04 | 04  | open     | homebudget data review                   |
 | 04.05 | 05  | pending  | data model                               |
 | 04.06 | 06  | pending  | accounts                                 |
 | 04.07 | 07  | pending  | transactions                             |
-| 04.08 | 08  | pending  | multi currency and forex                 |
-| 04.09 | 09  | pending  | financial statements                     |
-| 04.10 | 10  | pending  | architecture                             |
-| 04.11 | 11  | pending  | tech stack                               |
-| 04.12 | 12  | pending  | repo layout                              |
-| 04.13 | 13  | pending  | users and authentication                 |
-| 04.14 | 14  | pending  | networking and security                  |
-| 04.15 | 15  | pending  | api endpoints                            |
-| 04.16 | 16  | pending  | local dev env                            |
-| 04.17 | 17  | pending  | env variables                            |
-| 04.18 | 18  | pending  | docs publishing pipeline                 |
+| 04.19 | 08  | pending  | exchange rate api probe                  |
+| 04.08 | 09  | pending  | multi currency and forex                 |
+| 04.09 | 10  | pending  | financial statements                     |
+| 04.10 | 11  | pending  | architecture                             |
+| 04.11 | 12  | pending  | tech stack                               |
+| 04.12 | 13  | pending  | repo layout                              |
+| 04.13 | 14  | pending  | users and authentication                 |
+| 04.14 | 15  | pending  | networking and security                  |
+| 04.15 | 16  | pending  | api endpoints                            |
+| 04.16 | 17  | pending  | local dev env                            |
+| 04.17 | 18  | pending  | env variables                            |
+| 04.18 | 19  | pending  | docs publishing pipeline                 |
 
 ## Agent skills implement customization
 
@@ -399,8 +420,10 @@ The bespoke skills for `0.2.0` are:
 03. `redbooks-statements`: the income statement, the balance sheet, drill down and CSV export. It builds on `accounting`.
 04. `redbooks-backend-api`: the RedBooks API endpoints, user-scoped data access and OAuth session handling. It builds on `fastapi` and `postgresql`.
 05. `redbooks-frontend`: the RedBooks pages, navigation and phone layout. It builds on `react`.
-06. `redbooks-homebudget-migration`: the HomeBudget export files and their report sections, the account and category mapping, and the migration rules from the HomeBudget data review.
+06. `redbooks-homebudget-migration`: the HomeBudget database layout and the account `02` snapshot, the account and category mapping, the match keys, and the migration rules from the HomeBudget data review.
 07. `redbooks-deploy-and-validation-cycle`: the RedBooks local Docker run and verify loop, using the validation utilities. It builds on `pytest` and `playwright`.
+
+`redbooks-ledger` and `redbooks-statements` draw their rules from the **accounting rules**, and `redbooks-currency` from its foreign currency rules. `redbooks-homebudget-migration` draws on the **homebudget accounts** doc, and covers both the account `02` seed and the account `01` migration.
 
 **closure criteria**
 
@@ -408,10 +431,12 @@ The bespoke skills for `0.2.0` are:
 02. no bespoke skill repeats generic practice that its linked generic skill already covers.
 03. each implementing agent lists the bespoke skills it loads alongside its generic skills.
 04. every agent and skill references design docs by their current names and paths.
+05. every skill change is trialled against a control before it is promoted, and only a failing control with a passing experiment counts.
+06. the `redbooks-deploy-and-validation-cycle` skill names the narrowest test set to run first for each kind of change, and the first-failure triage the agent follows to correct itself.
 
 ## Local dev and test env
 
-This milestone builds the repeatable local environment. Docker Compose runs the PostgreSQL database, the FastAPI backend and the React web app on the developer's laptop. A tunnel connects a real phone to the local web app, and a mobile emulator on the laptop covers the same pages. Environment variables are set through a `.env` file.
+This milestone builds the repeatable local environment. Docker Compose runs the PostgreSQL database, the FastAPI backend and the React web app on the developer's laptop. A tunnel connects a real phone to the local web app, and a mobile emulator on the laptop covers the same pages. Environment variables are set through a `.env` file. One settings object reads `.env` directly for the app, the scripts and the tests, and every run logs its effective mode.
 
 **closure criteria**
 
@@ -420,10 +445,31 @@ This milestone builds the repeatable local environment. Docker Compose runs the 
 03. a `.env.sample` file lists every environment variable with a description.
 04. the developer guide draft records the setup, start and stop steps.
 05. the test runner executes an empty test suite in every tier.
+06. one command creates an empty database. The schema and account 02 seed milestone extends it to build the schema and reload the seed.
+07. the preflight check is proven against injected failures.
+08. each agent session runs in its own worktree.
+09. a test checks that the app, a script and the test fixtures run in the mode `.env` selects.
+
+## Schema and account 02 seed
+
+This milestone builds the database schema from the data model design and loads a dated snapshot of the user's HomeBudget account `02` database from `data/` as the seed that tests, demos and daily development run on. The snapshot script copies the live database named in `.env` into `data/`, and the seed loads the newest copy. The seed is the real data, loaded as-is with its account names, payees and notes, so RedBooks is usable from day one and its figures compare directly with HomeBudget. The seed and everything built from it stay in uncommitted locations, out of version control and the published docs. During `0.2.0` development, one command rebuilds the schema and reloads the seed, and every schema change, in this milestone and in every feature milestone after it, runs through that command and changes the schema, the seed load and the data model doc together. The snapshot supplies each account's reconciled balance point. The fixture builder writes the expected-value fixtures from the snapshot with plain SQL, from HomeBudget's own balances, transfer amounts and category totals.
+
+**closure criteria**
+
+01. one command builds the schema from the data model design and reloads the seed from `data/` into an empty database.
+02. the seed holds the account `02` snapshot as-is, with its real account names, payees and notes, and a second user with distinct data.
+03. the seed and the expected-value fixtures live in the uncommitted location the repo layout design sets, `git check-ignore --no-index` passes for every seed path, and the docs build includes none of them.
+04. every account has its reconciled balance point from the snapshot.
+05. counts, balances and dates derived from other rows are computed by the loader, loader inputs are pinned, loading twice gives an identical database, and every changed generated file is reviewed.
+06. every closed vocabulary value has a seeded row, and every constraint comes from the requirements.
+07. the seed holds stored USD to SGD exchange rates for every date it needs, and each transfer between currencies carries the two amounts the snapshot holds for it.
+08. the expected-value fixtures hold the category totals, account balances, fx transfer amounts and record counts, each read from the snapshot with plain SQL without running RedBooks code.
+09. the seed includes every edge case in the case catalogue, and passes every expected-value check.
+10. every path that could carry seed data out of its location, such as logs, test output, screenshots, traces and the docs build, has a check shown to fail on a planted real value.
 
 ## Validation utilities
 
-This milestone builds the standalone tools that give every later feature a fast, repeatable pass or fail signal outside the pytest suite. The tools carry out the independent verification layers set in the test strategy: self-report through case replay against a running app, direct inspection of the database, and oracle checks against the reference data. They build on the scripts from the local dev and test env milestone and extend them in place. Feature milestones then add their own case files and checks to these tools, and write no new tools of their own.
+This milestone builds the standalone tools that give every later feature a fast, repeatable pass or fail signal outside the pytest suite. The tools carry out the independent verification layers set in the test strategy: self-report through case replay against a running app, direct inspection of the database, and oracle checks against the reference data. They build on the scripts from the local dev and test env milestone and extend them in place, and on the seed load and expected-value fixtures of the schema and account 02 seed milestone, which precedes them. Feature milestones then add their own case files and checks to these tools, and write no new tools of their own.
 
 The toolset covers:
 
@@ -442,25 +488,13 @@ Every tool reports each case as pass, fail or error, where error marks a check t
 02. one command resets the local database to seed data.
 03. the database utility reads, writes and searches every table in the schema from the command line and as an importable module.
 04. the API tester runs a whole case file or one named case, as a named seeded user, and its verdict for each case matches the pytest API tier for the same case.
-05. the UI tester runs a check file in a mobile viewport in both canned-response and real-backend modes, and saves a screenshot for every failed or errored check.
+05. the UI tester runs a check file in a mobile viewport in both canned-response and real-backend modes, and saves a screenshot for every failed or errored check. Each page also runs at a second phone width and a desktop width.
 06. the reference checks report every fixture balance, category total and fx transfer amount with its expected and actual value.
-07. every tool reports pass, fail or error per case, writes the shared structured log and exits non-zero on any fail or error, verified with one passing run and one run with a deliberate failure of each kind.
+07. every tool reports pass, fail or error per case, writes the shared structured log and exits non-zero on any fail or error, verified with one passing run and one run with a deliberate failure of each kind. Every check is shown to fail on a planted fault before it is trusted, and every tool applies the latency budgets.
 08. every tool is tracked in git and reads its settings from `.env`.
 09. the local dev and test env milestone's closing commands still pass unchanged.
-10. the deploy and validation cycle skill names each tool, when to use it and its command.
-
-## Setup database seed data
-
-This milestone creates the schema and the seed data that tests and demos run on. The seed data follows the shape of the HomeBudget snapshot, covering its accounts and types, SGD reporting with USD accounts, the consolidated categories and about five months of transactions and transfers. A seed data generator script builds it from the snapshot. The same script writes the expected-value fixtures from the report's budget section, the account balances file and the fx transfers file.
-
-**closure criteria**
-
-01. database migrations create the full schema on an empty database.
-02. one command loads the seed data into the local database and reloads it cleanly.
-03. the seed data includes every edge case named in the test cases.
-04. the seed data includes stored USD to SGD exchange rates for every date it needs, and each transfer between currencies carries the two amounts from the fx transfers file.
-05. the expected-value fixtures hold the category totals, account balances, fx transfer amounts and section row counts from the snapshot.
-06. the seeded data passes every expected-value check in the fixtures.
+10. the `redbooks-deploy-and-validation-cycle` skill, written in the agent skills implement customization milestone, names each tool, when to use it and its command.
+11. a tool that writes into the user's working database refuses to run without the second opt-in, and backs the database up first.
 
 ## Oauth login
 
@@ -468,11 +502,12 @@ This milestone adds sign-in with OAuth and scopes every record to its owner. A u
 
 **database**
 
-The schema holds users, their linked OAuth identities and their sessions. Every user-owned table carries an owner reference to the user.
+The schema holds users, their linked OAuth identities and their sessions. Every user-owned table carries an owner reference to the user. Each user holds a timezone setting, Asia/Singapore by default, which sets today's date for new entries and the month boundaries of every statement.
 
 01. the user, identity and session tables exist with their keys and constraints, per the data model design.
 02. every user-owned table has a required owner reference, and a record without an owner is rejected by the database.
 03. the seed data holds two users with distinct data.
+04. each user record holds an IANA timezone name, set to Asia/Singapore at first sign-in, and the database rejects a name outside the timezone database.
 
 **api endpoints**
 
@@ -480,8 +515,9 @@ The endpoints cover sign-in, the OAuth callback, sign-out and the current user. 
 
 01. sign-in redirects to the OAuth provider, and the callback creates the user on first sign-in and links the identity on later sign-ins.
 02. sign-out ends the session, and a later request with that session is rejected.
-03. every data endpoint rejects a request without a valid session.
+03. every data endpoint rejects a request without a valid session. An unknown path under the API prefix answers 401 to a signed-out request, every token validation error answers 401, and boundary cases account for the library's clock leeway.
 04. a request for another user's record returns not found, verified for every resource and verb as the second seeded user.
+05. automated tests sign in through a local stub OpenID Connect provider, through the real sign-in endpoint and callback. A live check confirms the real provider's discovery document and sign-in redirect without signing a real account in.
 
 **front end pages and behaviors**
 
@@ -490,13 +526,25 @@ The sign-in page starts the OAuth flow, and every other page requires a signed-i
 01. the sign-in page signs the user in through the OAuth provider in the mobile layout.
 02. opening any page without a session leads to the sign-in page, and signing in returns the user to the page they opened.
 03. sign-out returns the user to the sign-in page.
-04. automated browser tests sign in through the stub identity provider set in the test strategy.
+04. automated browser tests sign in through the stub identity provider, then make live calls for everything except irreversible writes. The full live OAuth flow with its writes is the user's test.
+05. the settings page shows the user's timezone and saves a new one picked from a searchable list.
+
+## Audit skills checkpoint
+
+This milestone runs once the design, the foundation and the first feature are built. It reads every `lesson observation` and experiment result the trackers have recorded so far, trials the skill changes they suggest against a control, and promotes or drops each lesson to be learned whose evidence is in, such as the route table tests of LT.01, the mode check of LT.03 and the rate API probe of LT.08. The four remaining feature milestones then start from the promoted rules. Lessons still open carry forward to the audit skills promote learning milestone.
+
+**closure criteria**
+
+01. every `lesson observation` and experiment result recorded so far is listed with its lesson and its tracker.
+02. each lesson to be learned with settling evidence is promoted into a skill rule or reference lesson, or dropped, and its status is updated in the **lessons learned**.
+03. each skill change is trialled against a control before it is promoted, and only a failing control with a passing experiment counts.
+04. every changed skill and agent passes a documentation style review, and every agent still carries the identical shared boundaries block.
 
 ## Currency model
 
 This milestone builds the currency foundation the ledger and the financial statements rely on, with the same currency management the user has in HomeBudget. Each user manages their own list of currencies. Adding a currency picks it from the catalog of available currencies, and a currency the user no longer needs can be removed. The catalog is the list of currencies the rate API supports, the same API the **homebudget wrapper** uses, so every currency a user adds has exchange rates available. The milestone also covers the money type with exact decimal arithmetic and the user's reporting currency setting, chosen from the user's currencies.
 
-Each exchange rate is fetched once for a currency pair and date, stored, and served from storage on every later request. A user can also record a rate by hand, which RedBooks stores next to the fetched one and uses in its place.
+Each exchange rate is fetched once for a currency pair and date, stored, and served from storage on every later request. A user can also record a rate by hand, which RedBooks stores next to the fetched one and uses in its place, so a rate defaults to the live fetched value and the user can override it, per AR.12 of the **accounting rules**. The rate client builds on the findings of design task 04.19, the exchange rate API probe, and its stubs come from the probe's saved responses.
 
 **database**
 
@@ -521,7 +569,7 @@ The endpoints list the currency catalog, list, add and remove the user's currenc
 06. a request for a rate not yet stored fetches it from the rate API once, stores it and returns it, and every later request for the same pair and date is served from storage.
 07. a user rate for a pair and date takes the place of the fetched rate in every conversion for that user.
 08. converting an amount returns the exact result of the stored rate, rounded to the target currency's decimal places, checked against oracle values.
-09. a rate API failure returns a clear error and leaves the catalog and stored rates unchanged, verified against the stubbed rate API.
+09. a rate API failure returns a clear error and leaves the catalog and stored rates unchanged, verified against the stubbed rate API. The rate client sets explicit timeouts and names each failure cause with a fix, and the fetch job always reaches a terminal status with its original exception recorded.
 
 **front end pages and behaviors**
 
@@ -539,7 +587,7 @@ The pages cover the currencies page and the exchange rates page, in the phone la
 
 ## Txn and accounts
 
-This milestone builds the ledger and transaction entry. Every account keeps its entries in the general ledger, with an opening balance on its own date. The user adds, edits and deletes expenses, income and transfers from the phone-layout pages. A transfer links two ledger entries, one on each account, with an amount in each account's currency. A split purchase is recorded as one expense per category in the cost center account plus a transfer from the payment account for the total. Each account holds one of the user's currencies from the currency model. Amounts use the money type. An expense or income can be entered in any of the user's currencies, as in HomeBudget. The record keeps the entered currency, the entered amount and the rate, and posts the converted amount to the account's ledger in the account's currency. Transfers between currencies and entries in another currency take their rate from the currency model.
+This milestone builds the ledger and transaction entry. Every account keeps its entries in the general ledger, with an opening balance on its own date. The user adds, edits and deletes expenses, income and transfers from the phone-layout pages. A transfer links two ledger entries, one on each account, with an amount in each account's currency. An expense or an inflow posts directly on any asset or liability, and a refund reverses its category on the account that receives it. The cost center is an optional clearing account for splits: a split purchase is recorded as one expense per category in the cost center account plus a transfer from the payment account for the total. Billing accounts return to zero when settled. These follow AR.05 to AR.08 of the **accounting rules**. Each account holds one of the user's currencies from the currency model. Amounts use the money type. A reporting currency account accepts an expense or income in any of the user's currencies and posts the converted amount to its ledger. A foreign currency account accepts only its own currency. The record keeps the nominal currency, the nominal amount and the rate. A card's foreign exchange fee is a separate expense on the same card, per AR.12 of the **accounting rules**. Transfers between currencies and entries in another currency take their rate from the currency model.
 
 **database**
 
@@ -552,6 +600,8 @@ The schema holds accounts with their type, currency and opening balance, the two
 05. amount columns use exact decimal types, and a round trip through the database utility returns every amount unchanged to the decimal places of its currency.
 06. the database rejects a ledger entry whose currency differs from its account's currency.
 07. every account's currency references one of its owner's currencies, so a currency held by an account stays in the user's list.
+08. an account or category with posted transactions is retired, never deleted.
+09. every single-active rule is a partial unique index.
 
 **api endpoints**
 
@@ -560,14 +610,16 @@ The endpoints create, read, update and delete accounts, categories, subcategorie
 01. every resource endpoint covers the case set in the test strategy: required fields, validation errors, a missing record, the happy path, a request without a session and another user's record.
 02. creating, editing or deleting an expense, income or transfer updates the ledger entries it owns in the same database transaction.
 03. a transfer between two currency pairs, such as SGD and USD accounts stores the amount in each account's currency, each to the decimal places of its currency.
-04. the account balance for any date equals the opening balance plus the ledger entries up to that date.
+04. the account balance for any date equals a reconciled balance point plus the signed entries between the two dates, and the opening balance is the account's first reconciled balance point.
 05. a split purchase leaves the payment account balance equal to the total purchase amount on the statement.
 06. a transfer between currencies stores the rate it used. The default rate comes from the currency model for the transfer date, with the user's recorded rate in place of the fetched one where one exists. An override the user makes on the transfer is stored on that transfer only and leaves the currency model's rates unchanged.
 07. creating or editing an account accepts only one of the user's currencies.
 08. creating or editing an expense or income accepts only a subcategory of the user's own categories, and listing by category returns the transactions of all its subcategories.
-09. an expense or income entered in a currency other than the account's currency accepts only one of the user's currencies. Its ledger amount equals the entered amount times the rate, rounded to the account currency's decimal places, checked against oracle values.
+09. an expense or income in a currency other than the account's currency is accepted only on a reporting currency account, and only in one of the user's currencies. A foreign currency account rejects it. Its ledger amount equals the entered amount times the rate, rounded to the account currency's decimal places, checked against oracle values.
 10. the default rate for an entry in another currency comes from the currency model for the entry date, with the user's recorded rate in place of the fetched one where one exists. An override of the rate or of the account currency amount is stored on that entry only.
 11. editing the entered amount, currency or rate of an expense or income updates its ledger entry in the same database transaction.
+12. a card charge billed above its converted amount records the difference as a separate foreign exchange fee expense on the same card.
+13. every ledger write goes through the ledger service that enforces its invariants.
 
 **front end pages and behaviors**
 
@@ -584,30 +636,36 @@ The pages cover the account list with balances, an account ledger, the category 
 09. every detail page links to the detail page of each account, category and subcategory it shows, and a delete asks for confirmation first. Saving or deleting returns the user to the list they came from, with balances and totals updated.
 10. when the two accounts hold different currencies, the paired currency amount and rate are filled in from the currency model's exchange rate for the transfer date.
 11. for forex transfers, the user has an option to over-ride either the pair amount or the exchange rate and the other value updating based on the over-ride decision. The override applies to that transfer only.
-12. the expense and income forms pick a category and then one of its subcategories. The forms also offer a currency picker listing the user's currencies, set to the account's currency by default. Choosing another currency fills in the rate from the currency model and shows the amount in the account's currency, and the user can override either the rate or that amount, with the other value updating to match.
+12. the expense and income forms pick a category and then one of its subcategories. On a reporting currency account, the forms also offer a currency picker listing the user's currencies, set to the account's currency by default. On a foreign currency account, the currency is fixed to the account's currency. Choosing another currency fills in the rate from the currency model and shows the amount in the account's currency, and the user can override either the rate or that amount, with the other value updating to match.
 13. the expense and income detail pages show the entered amount and currency, and for an entry in another currency, the rate and the amount in the account's currency.
 14. the account form offers only the user's currencies, from the currencies page.
 15. amounts display to the decimal places of the account's currency, and every form rejects an invalid amount with a message on the field.
+16. after a save or delete, every view showing the changed data refreshes, and fields the user is editing keep their input.
 
 ## Financial statements
 
 This milestone builds the income statement and the balance sheet from the ledger. Each statement has two views. The year view shows the twelve months of a year side by side, and the month view shows one month in detail. Clicking a month in the year view opens the month view for that month, and clicking a line in the month view opens the transactions that make it up. The statements report in the user's reporting currency, set on the currencies page of the currency model.
 
-The income statement follows the two-level category model. Each category line totals the subcategory lines beneath it, for income and for expenses. The balance sheet shows each account at its balance converted with the currency model's rates, grouped by account asset class, with the forex gain or loss as its own line. Both statements export to CSV from either view.
+A closed month is reported from a stored snapshot. On the 1st of every month, in the user's timezone, a snapshot job generates and stores the snapshot of the month before, holding both statements for that month in the reporting currency. The job runs inside the backend, at start and every hour, so a month whose 1st passed while the laptop was off is picked up on the next start. The current month is a month to date run, built on request and never stored. A re-run of a past month stores a new version and keeps the old ones, as a slowly changing dimension of type 2, and every report shows the newest version. Every write to a transaction, rate or opening balance that a snapshot covers marks that snapshot stale, and the user sees which lines drifted, views the changes and re-runs the month. Changing the reporting currency takes confirmed warnings and a choice of past years to regenerate in the new currency. Snapshots in the old currency stay in the history, which lists statements by year, then by currency where a year has more than one, then by month. The seed load and the account `01` migration generate a snapshot for every month they load, and the migration validation checks them.
+
+The income statement follows the two-level category model. Each category line totals the subcategory lines beneath it, for income and for expenses. The balance sheet shows each account at its balance converted with the currency model's rates, grouped by account asset class, with the forex gain or loss as its own line. Both statements export to CSV from either view. The income statement shows expenses as positive amounts only when it is presented. The books, the API and every oracle hold signed entries, per AR.18 of the **accounting rules**.
 
 **database**
 
-Statements are calculated from the ledger, the category model, the reporting currency setting and the stored exchange rates of the currency model when requested. The schema adds the account type grouping the balance sheet uses.
+Statements are built from the ledger, the category model, a reporting currency and the stored exchange rates of the currency model. The schema adds the account type grouping the balance sheet uses, the statement snapshots with their versions and lines, the snapshot job runs, and the ledger change log.
 
 01. every account type maps to one balance sheet group, per the data model design.
 02. the stored exchange rates cover every month-end date the seed data statements need.
+03. each snapshot version is keyed by user, month and reporting currency, with its run kind, run time, valid from and valid to times, and stale flags for each statement. A partial unique index allows one current version per key.
+04. each snapshot stores every line of both statements, the forex gain or loss, net worth and the rates it used, as exact decimals.
+05. every ledger, rate, opening balance and category write records a change log row with its before and after values in the same database transaction.
 
 **api endpoints**
 
 The endpoints return the income statement and the balance sheet for a year, with a value for each month, and for a single month. They also return the transactions behind any month view line, and the CSV export of each view and of the transaction list.
 
 01. the income statement month view matches its expected totals by category and subcategory for a seed data month.
-02. the income statement for the snapshot period matches the expense total for each subcategory in the budget section of the HomeBudget report.
+02. the income statement for the snapshot period matches the expense total HomeBudget holds for each subcategory in the snapshot.
 03. every category line equals the sum of its subcategory lines, in both views.
 04. the balance sheet month view matches its expected account balances and net worth at the end of a seed data month.
 05. each month in the year view equals the matching month view, for both statements, and the income statement year total equals the sum of its twelve months.
@@ -615,11 +673,19 @@ The endpoints return the income statement and the balance sheet for a year, with
 07. changing the reporting currency on the currencies page converts every statement line using the currency model's rates for the statement dates, with the user's recorded rates in place of fetched ones where they exist.
 08. each transfer between currencies keeps its own stored amounts in the ledger, and the statements convert account balances with the currency model's rates.
 09. the drill down for every month view line returns exactly the transactions that sum to that line.
-10. each CSV export holds the same values as the matching view or transaction list response.
+10. each CSV export holds the same values as the matching view or transaction list response. A closed month's export carries the snapshot values and its version time.
+11. each statement labels its population and period, and its source: the snapshot version and run time, or month to date for the incomplete current period.
+12. the snapshot job generates each closed month with no snapshot once, in the user's timezone and current reporting currency, at backend start and every hour, catching up every month missed while the app was down. Each run reaches a terminal status with its original exception recorded on failure.
+13. a closed month reads its current snapshot version, and the month to date run is built on request and never stored.
+14. a re-run stores a new version that becomes current, closes the version before it with its valid to time, and leaves every older version retrievable unchanged.
+15. a write dated in a month marks that month's income statement snapshot stale, and the balance sheet snapshots of that month and every later month. A stale view returns each line's snapshot amount, current amount and difference, and the changes endpoint returns every change log row since the snapshot ran that the month's statements include.
+16. a reporting currency change regenerates every closed month of the years the user checks, and always the current year, in the new currency. Snapshots in the old currency stay current for their own currency and stay retrievable.
+17. the history returns every snapshot grouped by year, then by reporting currency where a year holds more than one, then by month, with each month's current version, version count and stale flags.
+18. the seed load and the account `01` migration generate a snapshot for every month they load, and the reference checks compare those snapshots with the HomeBudget reference figures.
 
 **front end pages and behaviors**
 
-The pages show the year view and the month view of the income statement and the balance sheet, in the phone layout. Each view has a year or month picker, the reporting currency with a link to the currencies page, and a CSV export action.
+The pages show the year view and the month view of the income statement and the balance sheet, the statement history, the snapshot versions and changes, and the reporting currency change, in the phone layout. Each view has a year or month picker, the reporting currency with a link to the currencies page, and a CSV export action.
 
 01. the year view of the income statement shows each category, with its subcategories beneath it, and the amount for each month of the year and the year total.
 02. the year view of the balance sheet shows each account, grouped by asset class, with its balance at the end of each month of the year, and net worth for each month.
@@ -629,32 +695,52 @@ The pages show the year view and the month view of the income statement and the 
 06. the user moves back and forward a month, or returns to the year view, from the month view.
 07. clicking a line in the month view opens the transactions that make it up.
 08. the forex gain or loss shows as its own line on the balance sheet, in both views.
-09. each statement shows its reporting currency, and after the user changes it on the currencies page, both statements show the converted values.
+09. each statement shows its reporting currency, and after a reporting currency change, the month to date view and every regenerated month show the converted values, and the months left unregenerated show their own currency.
 10. the export action downloads a CSV holding the values shown on screen, for the view on screen.
+11. every statement view shows its source, the snapshot version and run time or month to date, and marks a stale month on the year view, the month view and the history.
+12. a stale line shows its snapshot amount, current amount and difference. The snapshot changes page lists every change since the snapshot ran, and re-run offers this month and every later stale month.
+13. the statement history page lists years, then reporting currencies where a year has more than one, then months. The versions page lists every version of a month, and an older version opens read-only with a link to the current one.
+14. changing the reporting currency runs through the reporting currency change page: confirmed warnings, a checkbox list of past years with the current year locked, a second confirmation, and the regenerate job's progress.
 
-## Data migrate
+## Homebudget account 01 migrate
 
-This milestone loads the full HomeBudget history into RedBooks from the snapshot in `data/`. The load uses upsert logic. It matches each account, category, transaction and transfer against what the user already holds in RedBooks, adds the records that are new and skips the records already present, so a later snapshot that overlaps an earlier one loads only its new records. The match key comes from the HomeBudget data review. Identical transactions on the same day, such as two equal coffee purchases, are separate records, so the key counts each occurrence and keeps them all. The migration script reads the exported report, the account balances file and the fx transfers file, splits the report into its expense, income, budget and transfer sections, applies the mapping and rules from the HomeBudget data review, takes the amount in each currency for every transfer between currencies from the fx transfers file, and writes accounts, opening balances, categories, transactions and transfers. It checks its results against the totals in the exported report and against the balances in the account balances file.
+This milestone migrates the user's HomeBudget account `01` history into their working RedBooks database. The account `02` snapshot is already the seed, so this milestone carries the older history that account `02` does not hold. It starts only after every feature milestone is validated and tested, so the large account `01` data is migrated as few times as possible. Its first task adopts versioned forward migrations, so the working database keeps its data across every later schema change. The migration loads the account `01` rows dated 2017-01-01 to 2026-05-23, from the reset of the account `01` cost centers to the last day of account `01`, and leaves out the retired accounts that have no activity in that scope. It maps the account `01` legacy categories onto the income statement lines through the explicit mapping of the legacy HomeBudget and financial statements workbooks, and keeps the account `01` cost center clearing history, per AR.07 of the **accounting rules**. At its start, each account held in both accounts resets its reconciled point to its last account `01` point, and the reconcile scope runs from that point to the next reconciliation. The load uses upsert logic: it matches each account, category, transaction and transfer against what the user already holds by the match key from the HomeBudget data review, adds the records that are new, and skips the records already present. Identical transactions on the same day are separate records, each with its own key. The migration writes into the user's working database only with a second opt-in, after a backup, and checks its results against the reference figures the HomeBudget data review sets for account `01`.
 
 **closure criteria**
 
-01. one command migrates the HomeBudget snapshot into a user, whether the user holds no data or data from an earlier migration.
-02. every HomeBudget row is either loaded, skipped as already present, or listed in the migration report with the rule that handled it, and the report counts the records added and skipped for each kind.
-03. the expense total for each category matches the actual spend in the budget section of the exported report.
-04. running the migration a second time on the same snapshot adds zero records and leaves every balance and total unchanged.
-05. migrating a snapshot that overlaps an earlier one adds only the records outside the earlier snapshot, and matches existing accounts and categories by the match key without creating duplicates.
-06. identical transactions on the same day in the snapshot each load as their own record, and a rerun keeps the same count.
-07. each opening and closing balance in the account balances file matches the RedBooks balance for that account and date, checked by the validation utilities.
+01. versioned forward migrations are in place, the app checks the migration head at startup, and a deliberately skipped step fails a check.
+02. one command migrates the account `01` history into a user. It refuses to write without the second opt-in, and backs up the working database first.
+03. every account `01` category and subcategory maps to one income statement line of the financial statements design, through the legacy workbook mapping, and the mapping lists any it could not map.
+04. every account `01` row is loaded, skipped as already present, or listed in the migration report with the rule that handled it, and the report counts the records added and skipped for each kind.
+05. records that overlap the account `02` seed match by the match key, and no duplicate account, category or transaction is created.
+06. identical transactions on the same day each load as their own record.
+07. running the migration a second time adds zero records and leaves every balance and total unchanged.
+08. each migrated cost center matches its HomeBudget balance at every month end in the scope.
+09. migrated balances and category totals match the account `01` reference figures, checked by the validation utilities.
+10. the migration job reaches a terminal status with its original exception recorded on failure, and commits its progress as it goes.
+11. the migration loads only rows dated 2017-01-01 to 2026-05-23, and no retired account.
+12. each account held in both accounts carries its last account `01` reconciled point after the migration, and its balance from that point to the next reconciliation is reported as the open reconcile scope.
+
+**tasks**
+
+| id    | seq | status  | task                                                   |
+| ----- | --- | ------- | ------------------------------------------------------ |
+| 12.01 | 01  | pending | account 01 category mapping from the legacy workbooks  |
+| 12.02 | 02  | pending | reconcile bridging between account 01 and account 02   |
+
+01. **12.01** capture the `cat_map` region of the HomeBudget workbook and the `fin_expense_cat_map` region of the financial statements workbook, whose ids are in `data/gsheets.json`, so every account `01` pair in the scope reaches its line, and settle whether the balancing and reimbursable categories are expense categories or clearing accounts.
+02. **12.02** reset each account held in both accounts to its last account `01` reconciled point, mostly from February or March 2026, and carry the difference to the account `02` records through the reconcile scope until the next reconciliation settles it.
 
 ## Audit skills promote learning
 
-This milestone reviews what the agents learned during the release and folds it into the shared skills. It collects the lessons recorded in feature trackers, logs and issues, and updates the skills and agents so the next release starts from them.
+This milestone reviews what the agents learned during the release and folds it into the shared skills. It collects the lessons recorded in feature trackers, logs and issues, and updates the skills and agents so the next release starts from them. It starts from the results of the audit skills checkpoint and covers the observations recorded since.
 
 **closure criteria**
 
-01. a lessons list records each lesson with its source.
+01. every `lesson observation` and experiment result since the checkpoint is read, each remaining lesson to be learned is promoted or dropped, and its status is updated in the **lessons learned**.
 02. each lesson is applied to a skill or agent, or recorded as no change with a reason.
 03. every changed skill and agent passes a documentation style review.
+04. each skill change is trialled against a control before it is promoted.
 
 ## Mkdocs documentation
 
@@ -665,7 +751,8 @@ This milestone writes and publishes the RedBooks documentation site. It covers t
 01. the developer guide covers setup, configuration, running, testing and debugging.
 02. the user guide covers sign-in, accounts, categories, transactions, transfers, financial statements and CSV export.
 03. the GitHub Actions workflow publishes the site on merge to `main`.
-04. the published site builds with no broken links.
+04. the site builds in strict mode, which fails on every broken link and anchor, and published pages carry no release references. The workflow and token prerequisites are listed as user actions.
+05. published pages show no real account names or personal details, only hypothetical names at real Singapore institutions, and the build includes no data file.
 
 ## Publish and release
 
@@ -674,6 +761,6 @@ This milestone ships `0.2.0`. The `dev` branch merges to `main` through a pull r
 **closure criteria**
 
 01. every milestone above is closed.
-02. the full test suite passes on the release commit.
+02. the full test suite passes on the release commit, run from a clean worktree of that commit.
 03. the release page states the as-built scope and links to the documentation site, developer guide and user guide.
 04. `VERSION` reads `0.2.0` and the release commit carries the `0.2.0` tag.

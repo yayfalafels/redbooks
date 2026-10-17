@@ -1,194 +1,111 @@
-# the feature-tracker document pattern
+# The feature tracker pattern
 
-A single markdown file per feature that is simultaneously the spec, the design doc, the test plan, and the progress tracker. It is written mostly *before* code exists and then filled in section by section, in order, as work actually happens - so at any point in time the file's fill-state IS the project's state, not a stale plan next to the real work.
+One markdown file per feature is the spec, the design doc, the test plan and the progress tracker. It is written mostly before code exists and filled in section by section as work happens, so its fill state is the feature's state.
 
-This is the generic pattern behind `docs/features/*.md` and `docs/assessments/*.md` in this repo. This pattern itself is portable to a feature in any project - an API endpoint, a fullstack feature, a migration, an infra change; a project without this skill defines its own equivalent for the concrete mechanics, matched to its own stack. `../implementation/REFERENCE.md` and `../validation/REFERENCE.md` are *this repo's* concrete mechanics for two of the seven stages below, not part of the portable shape.
+## Contents
 
-**boilerplate:** `templates/feature-tracker.md` in this folder is a copy-paste starting file matching this repo's actual conventions (Contents block, References section, Guideline footer) - copy it to `docs/features/<NN>-<name>.md` or `docs/assessments/<NN>-<name>.md` when starting a new tracker.
+- [Sections in fill order](#sections-in-fill-order)
+- [Id scheme](#id-scheme)
+- [Who does what](#who-does-what)
+- [Scale the skeleton](#scale-the-skeleton)
+- [Lessons](#lessons)
 
-## the seven sections, in fill order
+## Sections in fill order
 
-Sections are written top to bottom in the file, but **filled in left to right in time** - a later section stays a stub until the stage before it is settled. This ordering is the whole point: it structurally prevents "write the code before the test cases exist" or "pick edit locations before the design is agreed."
+The template is `templates/feature-tracker.md`. Sections sit top to bottom in the file and are filled left to right in time. The order keeps code from starting before test cases exist and edit locations from being picked before the design is agreed.
 
-| id | section                | question it answers                                          |
-| -- | ----------------------- | -------------------------------------------------------------- |
-| 01 | Tasks                   | what are the stages, and which are done?                      |
-| 02 | Scope                   | what are we building, what are we explicitly not, how do we know it's done? |
-| 03 | Design (high level)     | what are the key decisions, and why?                          |
-| 04 | Test strategy + cases   | how will each claim be checked, independently of the code that makes the claim? |
-| 05 | Design (detailed)       | exactly which files change, and in what order?                |
-| 06 | Implement               | the work itself, one numbered step per design/edit-location item |
-| 07 | Validate                | what actually broke, how it was found, what's left open       |
+| id | section        | question it answers                                                |
+| -- | -------------- | ------------------------------------------------------------------ |
+| 01 | Guideline      | which skills govern this document and its work?                    |
+| 02 | Tasks          | what are the stages, and which are done?                           |
+| 03 | Scope          | what is built, what is left out, and how is done measured?         |
+| 04 | Design         | what are the key decisions, and why?                               |
+| 05 | Test cases     | how is each claim checked, independently of the code that makes it |
+| 06 | Edit locations | which files change?                                                |
+| 07 | Implement      | the work, one step per group of edit locations                     |
+| 08 | Validate       | what ran, what broke, how it was found, and what is still open     |
 
-A short **Guideline** footer at the end names any other conventions this doc and its implementation must follow (formatting rules, coding conventions, deploy conventions) - keeps the tracker self-governing across many docs written over a long time.
+01. **Guideline** sits directly under the title and names the skills to follow.
+02. **Tasks** is a table, `id | seq | status | task`, with status `pending`, `open` or `closed`. The heading `## <F> (open) <feature name>` gives the one-line status.
+03. **Scope** states what is built in plain language, the out of scope items, and the closure criteria, written before the design exists.
+04. **Design** has one subsection per concern. Each states the chosen specification and its reason. Two callouts mark what a reviewer should scan: an **implementation decision** states a judgment call where the ask was ambiguous, with the choice and its reason, and a **deviation** states where the design departs from a higher-level doc or convention, and why.
+05. **Test cases** names independent verification layers, so no check grades its own output, then lists `id | scope-item | layer | check` with a **tools** block of commands that reproduce each layer by hand. A layer is independent when it reads nothing the code under test produced.
+06. **Edit locations** is a table, `id | path | change`, written before any file is opened. It tags generated and hand-authored files, and lists what is not expected to change.
+07. **Implement** has one step per group of edit locations, each opening with `edit locations: <ids>`. A step not yet started stays the stub `_expand when this step starts_`. A step only a human can do, such as a GUI-only tool or a third-party sign-in, is named as a user action.
+08. **Validate** holds the run evidence, the Issues table with one diagnostic section per issue, the user actions, and any `lesson observation LT.NN` entries. See `../validation/REFERENCE.md`.
 
-### 01 Tasks
+| id | layer             | checks against                                  |
+| -- | ----------------- | ----------------------------------------------- |
+| 01 | self-report       | the code's own `[PASS]` and `[FAIL]` output     |
+| 02 | black box         | behavior from outside: an HTTP response, a page |
+| 03 | direct inspection | the store queried directly, bypassing the app   |
+| 04 | oracle            | an expected value derived by a separate route   |
 
-One row per stage/subtask, `id | seq | status | milestone`, status one of `pending / open / closed`. This table - plus a one-line status in the file's own header, e.g. `## 12 (open) add CSV export to reporting dashboard` - is the single glanceable answer to "is this done." Everything below it is the evidence trail backing that claim up.
+## Id scheme
 
-### 02 Scope
+| code | meaning                                        |
+| ---- | ---------------------------------------------- |
+| CK   | scope closure criterion                        |
+| TC   | test case                                      |
+| CC   | closure check                                  |
+| EL   | edit location                                  |
+| IS   | issue, with `.<step>` for its diagnostic steps |
 
-Condensed from whatever prompted the feature (a ticket, a PRD, a user's verbal ask) into:
+Add a category only when a feature needs it, such as `PR` for ordered prerequisites.
 
-- a short plain-language statement of what's being built
-- explicit **out of scope** / deferred items - as important as the in-scope list, because it's the cheapest point to redirect before anything is built
-- a **closure** condition - the acceptance criteria, written before the design exists, not backfilled after
+## Who does what
 
-### 03 Design (high level)
+| id | stage          | the agent drafts or runs                  | the user checks                        |
+| -- | -------------- | ----------------------------------------- | -------------------------------------- |
+| 01 | Scope          | scope, out of scope and closure           | the boundary, the cheapest redirect    |
+| 02 | Design         | decision and reason per concern           | the flagged callouts                   |
+| 03 | Test cases     | independent layers and traceable cases    | that the layers are truly independent  |
+| 04 | Edit locations | every file to be touched, tagged          | the blast radius                       |
+| 05 | Implement      | the steps in order, filled in as they run | the user actions                       |
+| 06 | Validate       | reruns, issues as hypotheses              | open issues, then closes the task rows |
 
-One subsection per concern area - for an API: data model, endpoint contracts, auth/authz, error handling, idempotency, rate limits; for a fullstack feature: data model, API surface, client state, UI states (loading/empty/error). Each subsection states a decision and its rationale, not just the outcome.
+## Scale the skeleton
 
-Two callouts to use deliberately, because they're what a human reviewer should scan for instead of reading every line:
+A one-file fix can merge Design and Edit locations into one short section. Keep the section order and the id scheme even when sections are thin, so trackers written by different sessions still cross-reference cleanly.
 
-- **implementation decision** - flag any place the source ask was ambiguous and you resolved it by judgment rather than by an explicit instruction. State the decision and the alternative you didn't take.
-- **deviation** - flag any place this design departs from an existing higher-level design doc, architecture doc, or established convention, and why.
+## Lessons
 
-### 04 Test strategy + test cases
+### probe an external system before designing against it
 
-Written **before** edit locations or implementation - test-first at the doc level, not just the code level.
+When a design depends on how an outside system behaves, such as a third-party API's weekend handling or an export file's format, write a tracked, rerunnable probe script first. Each probe step saves its raw output and a findings file, and the findings become fixture cases.
 
-_test strategy_ - name the independent verification layers, so no check grades its own homework. A layer is "independent" if it does not read anything the code under test also produced. Typical layers, pick what applies:
+**why**: a feature designed on guessed behavior passed every fixture test and failed its first live run, because the fixtures encoded the same guess.
 
-| id | layer                 | what it checks against                                    |
-| -- | ---------------------- | ------------------------------------------------------------ |
-| 01 | self-report            | the code's own pass/fail output (logs, exit codes) [01]   |
-| 02 | black-box / client     | behavior from outside the system - HTTP response, UI      |
-| 03 | direct inspection      | the underlying store queried directly, bypassing the app  |
-| 04 | oracle / ground truth  | an expected value derived independently of the code [02]  |
+Example: `.dev/features/04-design/scripts/01-probe-rates-api.py` requests a weekend date, a missing date and a 400-day range, and writes each response to `findings/`.
 
-01. weakest layer alone - a `[PASS]` log line only proves the code ran, not that it computed the right thing.
-02. strongest layer - the value must be computed by a separate route than the code under test, or it isn't independent.
+### reconcile test cases with scope and edit locations before implementing
 
-_test cases_ - a table, `id | scope-item | layer | check`, each row traceable by id back to a Scope/Design item, plus a **tools** code block of copy-pasteable commands so any layer can be re-run by hand, independent of whatever the implementation eventually automates.
+Before the first implement step, read every test case against the scope, the data model and the edit locations. Trace every scope field to the column that stores it, and run every tracker command literally once.
 
-### 05 Design (detailed): edit locations
+**why**: cases were written before their fixture shape existed, a case expected behavior outside the milestone, an edit location assigned UI checks to a backend file, a required field had no column, and a tracker command used a syntax the tool rejects.
 
-A table, `id | path | change`, naming every file or module that will be touched, decided before any of them are opened. Footnote anything generated (never hand-edit) vs hand-authored, and state explicitly what's *not* expected to change (config, schema, public contracts) - a required change to one of those later is a defect raised where it's actually owned, not silently patched here.
+Example: scope item `12.CK.03` names an invoice due date. The reconcile pass finds no `due_date` column in edit location `12.EL.02` and adds it before any code is written.
 
-This table is what lets work resume correctly in a new session or by a different person - re-read the table instead of re-deriving "which files does this touch" from scratch.
+### scope by extending what exists
 
-### 06 Implement
+Before scoping a new script, utility or module, search the repo for one that already does most of the job, and scope the feature as an extension of it.
 
-Numbered steps mirroring the edit-locations table, each opening with its own `edit locations: <ids>` line naming the subset it touches. A step not yet started stays a one-line stub (e.g. `_expand when this step starts_`) rather than being pre-written in full - so the file's fill-state tracks real progress instead of a plan made once and abandoned.
+**why**: a draft scoped a new validation utility where an existing script already covered most of the work.
 
-Carve out explicitly any step that structurally requires a human - a GUI-only tool, third-party auth, an account only a person holds. Don't leave these implicit; name them as a distinct line so they aren't silently skipped or silently assumed automatable.
+Example: the scope reads "add a `--case` option to the existing API test script" instead of "write an API case runner".
 
-Load `../implementation/REFERENCE.md` for this repo's concrete mechanics at this stage - re-runnable scripts, `.env` parameterization, error handling, logging.
+### keep implementation guides to code snippets
 
-### 07 Validate
+Edit locations and implement steps hold short code snippets that show the shape of a change. Full source listings stay in the source files, and a nested feature gets its own tracker.
 
-- an **Issues** table, one row per first-out failure actually hit, each expanded into its own diagnostic section
-- a first-out failure is logged as data, kept structurally separate from the diagnostic steps taken about it, and any root cause stays framed as a **hypothesis** until evidence confirms it
-- a **user actions** line listing anything a human had to physically do (click through a Desktop app, approve a deploy, authenticate) - the explicit human-in-the-loop seam, kept separate from what the agent did on its own
+**why**: a tracker grew past 7,000 lines of source listings and a nested tracker. The snippets drifted from their prose and carried a defect into the code.
 
-Load `../validation/REFERENCE.md` for this repo's concrete issue-table columns, diagnostic-step fields, and log-file conventions at this stage (or a project's own equivalent, matched to its own stack) - not restated here, so there's one place that convention can change.
+Example: an implement step shows the five-line signature and guard of a new service function, and points to the file for the body.
 
-## id cross-reference scheme
+### grow a feature with a sub-feature first
 
-Every row across every table shares one id shape: `<feature-id>.<category>.<seq>`. This is what lets "does test case 12.TC.04 pass" resolve unambiguously back to a design decision and an edit location without re-reading prose.
+A feature request found during validation becomes a sub-feature of the current feature, with its own task rows and id prefix. It becomes a new milestone and tracker only when its scope warrants one.
 
-| code | meaning                          |
-| ---- | ----------------------------------- |
-| TK   | task / milestone row                |
-| CK   | scope requirement / check item      |
-| TC   | test case                           |
-| EL   | edit location                       |
-| IS   | issue, with `.<subtask>` for its diagnostic steps |
+**why**: nine feature requests from a walkthrough were logged as issues with full specifications, which hid new scope inside the issue list.
 
-Add more categories only when a feature actually needs them (this repo's assessment trackers add `PR` for ordered prerequisites and `DM` for a task-to-deliverable map) - don't pre-add categories a feature won't use.
-
-## who does what, per stage
-
-| id | stage             | AI drafts / executes                      | human checkpoint                   |
-| -- | ------------------ | -------------------------------------------- | --------------------------------------- |
-| 01 | Scope               | scope + closure from the ask [01]          | approves the boundary [02]             |
-| 02 | Design (high level) | decision + rationale per subsection [03]   | spot-checks flagged callouts only      |
-| 03 | Test strategy/cases | independent layers, traceable cases        | checks layers are truly independent    |
-| 04 | Design (detailed)   | every file to be touched, tagged [04]      | approves blast radius before opening   |
-| 05 | Implement           | executes in order, fills each step in live | performs the carved-out user actions   |
-| 06 | Validate            | reruns layers, logs issues as hypotheses   | reviews open issues, closes Tasks rows |
-
-01. also states out-of-scope / deferred items - as load-bearing as what's in scope.
-02. cheapest point to redirect the work, since nothing is built yet.
-03. flags ambiguous calls as **implementation decision** and any departure from an existing design as **deviation**.
-04. tagged generated-vs-hand-authored, plus what's explicitly not expected to change.
-
-## how the document shapes the workflow
-
-- **guides** - the skeleton exists, mostly empty, before work starts, so every stage has a named place to land before the first line of scope is even filled in.
-- **mirrors** - at any point in time the fill-state (which sections are still stubs, which Tasks rows are pending/open/closed) is an accurate readout of the project's actual state, not a plan frozen at kickoff.
-- **shapes** - because Test cases and Edit locations are only written after Design is settled, the order sections get filled in enforces the order decisions get made in - jumping to code before test cases exist is visibly premature, not just discouraged.
-- **directs** - an agent resuming in a new session reads the file's current fill-state instead of the chat history, and knows exactly which stage to resume at.
-- **reflects** - after the fact, Validate is a record of what actually broke, kept distinct from Design's stated intent, so the two can be diffed to catch drift between what was meant and what was built.
-
-## scale the skeleton to the feature
-
-Not every feature needs all seven sections at full weight. A one-file bugfix can collapse Design (high level) and Design (detailed) into one short Design section and skip the Guideline footer. Keep the order and the id scheme even when sections are thin - consistency of shape is what makes many trackers, written over a long time by different sessions, still cross-reference cleanly.
-
-## generic minimal skeleton (any codebase)
-
-For a project that doesn't have this repo's `templates/feature-tracker.md` conventions (Contents block, References section, Guideline footer), this bare skeleton keeps the same section order and id scheme:
-
-```md
-# <feature name> - Feature tracker
-
-## <id> (pending) <feature name>
-
-## Tasks
-
-| id      | seq | status  | milestone      |
-| ------- | --- | ------- | -------------- |
-| <F>.01  | 01  | open    | design         |
-| <F>.02  | 02  | pending | implement      |
-| <F>.IS  | 03  | pending | validate       |
-
-## Scope
-
-<what's being built, in plain language>
-
-- **out of scope** - <explicit exclusions>
-- **closure** - <acceptance condition, written before design exists>
-
-## Design
-
-### <concern area>
-
-<decision + rationale>
-
-**implementation decision** - <where the ask was ambiguous, what you chose, what you didn't>
-
-## Test cases
-
-_test strategy_
-
-1. **self-report** - <what the code's own output proves>
-2. **<independent layer>** - <what it checks against, without reading the code's own output>
-
-| id       | scope-item | layer | check                |
-| -------- | ---------- | ----- | --------------------- |
-| <F>.TC.01| <F>.CK.01  | ...   | <what passes/fails>   |
-
-## Edit locations
-
-| id       | path        | change            |
-| -------- | ----------- | ----------------- |
-| <F>.EL.01| <path>      | <what changes>     |
-
-## Implement
-
-### 1. <step name>
-
-edit locations: `<F>.EL.01`
-
-<work, or a one-line stub until this step starts>
-
-## Validate
-
-| id       | seq | status  | issue                  |
-| -------- | --- | ------- | ------------------------ |
-| <F>.IS.01| 01  | pending | \<first out exception\>  |
-
-**user actions**
-
-- <anything only a human can do>
-```
+Example: walkthrough requests for list sorting and batch archive become sub-feature `09.13`, with tasks `09.13.01` to `09.13.04`.

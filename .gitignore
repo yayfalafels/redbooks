@@ -1,1 +1,5 @@
 data
+.claude/settings.local.json
+.credentials
+.env
+env

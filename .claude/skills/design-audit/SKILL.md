@@ -1,34 +1,38 @@
 ---
 name: design-audit
-description: Audits one release's design document set (requirements, workflows, data model, architecture, UI, test strategy, etc.) for internal consistency, current best-practice alignment, implementation risk, and correct requirements-to-design hierarchy. Use when asked to review, audit, critique, or sanity-check a release's design docs — not for reviewing implementation code (see /code-review for that).
+description: Audits one release's design document set, such as requirements, workflows, data model, architecture, UI and test strategy, for internal consistency, current best practice, implementation risk, and requirements-to-design traceability. Use when asked to review, audit, critique or sanity-check a release's design docs. For implementation code, use a code review.
 ---
 
 # Design audit
 
-Scope is always **one release**: everything under `docs/releases/<release>/*.md`, plus [release-roadmap.md](../../../docs/releases/release-roadmap.md) and root `CLAUDE.md` for cross-release context. This is a documentation/design audit, not a code review — for an early release the code may not exist yet at all; the audit is about what the documents claim, and whether those claims hold together.
+The scope is one release: every design and planning document for that release, plus the release roadmap for cross-release context. The audit tests what the documents claim and whether those claims hold together. The code may not exist yet.
 
-## Process
+## Rules
 
-1. **Read every document in the set in full**, not excerpts — inconsistencies and dangling cross-references are the point, and both live in details a partial read misses. Note each document's declared decision-ID prefix (`REQ-*`, `ARCH-*`, `STRAT-*`, `TESTDATA-*`, etc.) and its stated place in the hierarchy (most of these docs say outright, in their own Purpose section, what they derive from and what derives from them — take that at face value and check it).
-2. **Check the four questions below** against the full set, not document-by-document — most real findings are cross-document (a requirement's implied assumption contradicted three docs later, a decision made twice in incompatible ways).
-3. **For best-practice claims, verify externally rather than opine** — use WebSearch for the specific technology/pattern actually named in the docs (a framework's current support status, a named architectural pattern's known failure modes, a security anti-pattern) and cite sources in the finding. Don't flag a generic "consider X" without evidence X is a live concern for what's actually written.
-4. **Cross-check status/metadata against content**, not just prose against prose: a milestone tracker marking a document "pending" while that document is long, complete, and cited by three other docs as settled is itself a finding — the tracked status and the actual state of the repo have diverged.
-5. Don't invent problems to fill a quota. A doc set with genuinely solid traceability should get a short report; padding it with nitpicks to look thorough is worse than a short accurate one.
+01. **read every document in full.** Inconsistencies and dangling cross-references live in details a partial read misses. Note each document's decision id prefix, such as `REQ-` or `ARCH-`, and the place in the hierarchy it states for itself.
+02. **check the four questions across the whole set.** Most real findings are cross-document: a requirement contradicted three docs later, or one decision made twice in incompatible ways.
+03. **verify best practice externally.** Search for the specific technology or pattern a doc names, and cite the source in the finding. A generic "consider X" with no evidence that X applies is left out.
+04. **cross-check status against content.** A tracker that marks a document pending while the document is complete and cited as settled is a finding.
+05. **report only real findings.** A doc set with solid traceability gets a short report.
 
 ## The four audit questions
 
-1. **Internal consistency.** Do the documents' explicit statements and *implied* assumptions agree with each other? Look especially for: the same concept named or scoped differently in two docs, a decision stated as settled in one doc and left open or contradicted in another, and a requirement whose literal scope (e.g. "generic" or "all entities") silently collides with a more specific rule stated elsewhere for the same data.
-2. **Design best practices.** For each domain the design set touches (data modeling, API design, frontend framework choice, concurrency/storage, security, browser automation, etc.), how does the design compare to current (not historical) best practice? This requires external research, not memory — search for the specific pattern or technology named in the docs. A deliberate, well-justified deviation (the docs here frequently argue for a "lowest-ceremony" choice on purpose) is not automatically a finding — only flag it where the trade-off is either unstated or where current evidence undercuts the stated rationale.
-3. **Implementation risk.** What in the design, if built exactly as written, is likely to cause a concrete problem later — a race condition implied but not resolved, a performance budget stated elsewhere in the set that a different section's numbers don't fit inside, a closed enumeration with no seed/test coverage plan, a manual step with no fallback. Prefer risks you can point to a specific mechanism for, over vague "this might be hard."
-4. **Hierarchy and traceability.** This project's convention is requirements → workflows/data-model → architecture/UI/test-strategy, each layer citing the requirement or upstream decision it operationalizes. Check both directions: does every requirement have downstream coverage (a requirement nobody's design references is unimplemented-by-omission), and does every downstream decision cite something upstream (a decision with no traceable justification is either an undocumented requirement or scope creep)? Also check that the *documented* sequencing (milestone/build order) matches the *actual* dependency order visible in the documents' own cross-references — these two drift apart easily and silently.
+01. **internal consistency.** Do the explicit statements and implied assumptions agree? Look for one concept named or scoped differently in two docs, a decision settled in one doc and open or contradicted in another, and a broad requirement that collides with a specific rule for the same data.
+02. **design best practice.** For each domain the set touches, such as data modelling, API design, frontend framework, storage, security and testing, how does the design compare with current practice? A deliberate, justified deviation is a finding only where its trade-off is unstated or current evidence undercuts it.
+03. **implementation risk.** What, built exactly as written, is likely to cause a concrete problem? Examples are an implied race condition, a performance budget another section's numbers exceed, a closed vocabulary with no seed or test coverage, and a manual step with no fallback. Name the mechanism.
+04. **hierarchy and traceability.** Requirements lead to workflows and the data model, which lead to architecture, UI and test strategy, and each layer cites what it operationalises. Check both directions: every requirement has downstream coverage, and every downstream decision cites something upstream. Check that the documented build order matches the dependency order the cross-references show.
 
 ## Output
 
-Write findings to `docs/releases/<release>/<release>-issues.md`:
+Write the findings to `docs/releases/<release>/<release>-design-audit.md`, following the **documentation-style** rules for prose and the **markdown-tables** rules for the summary table.
 
-- Near the top, introduce the documents in scope once as bolded, human-readable, linked names — e.g. **architecture** ([010-architecture.md](010-architecture.md)) — never a cryptic two/three-letter code. Reuse these same bolded names in every issue's prose from then on instead of repeating the bare filename; a name a reader can't recognize without a legend defeats the point of naming it.
-- A summary table: columns `ID | Severity | Category | Title` only — no document/reference column, since that would just re-abbreviate the names the previous point already fixed. One row per issue, most severe first, padded to a fixed column width with every row kept under ~115 characters so it doesn't wrap in a plain markdown viewer.
-- Severity: **Critical** (design is self-contradictory or unbuildable as written), **High** (a real defect a team would hit early and that's expensive to unwind later), **Medium** (a real defect, contained blast radius, or a best-practice gap with concrete evidence), **Low** (worth recording, not urgent).
-- Category: one of `Internal Consistency`, `Design Best Practice`, `Implementation Risk`, `Hierarchy/Traceability`.
-- Below the table, one subsection per issue (`### ISS-01 <title>`) starting with a `**Docs:**` line listing the affected documents by their bolded linked name (this is the list the summary table intentionally doesn't carry), then: what's wrong and where (cite specific sections/decision IDs, not just "the docs"), why it matters concretely, and a suggested resolution or question to raise with the owning role (product-manager for scope, architect for cross-domain design). Do not restate the summary table row — add the detail the table had no room for.
-- **Write prose as one line per paragraph in the markdown source** — do not manually wrap a paragraph's sentences across multiple lines at some fixed column width. Every pre-existing document in this project's `docs/releases/` tree uses one-line-per-paragraph (an editor soft-wraps it for display; a person or agent reading the raw file never sees a mid-sentence break, and a later edit to one sentence produces a one-line diff instead of reflowing the whole paragraph). The `~115 character` limit two bullets up applies **only** to the summary table's rows — it is not a general prose line-length budget, and must never be read as license to hard-wrap narrative text. If a paragraph in your draft looks long in the editor, that is expected and correct; do not "fix" it by inserting line breaks.
+01. near the top, introduce each document in scope once by a bold, readable, linked alias, such as **architecture**, and use the alias in every finding.
+02. a summary table with the columns `id | severity | category | title`, one row per finding, most severe first. Ids take the form `<release>.DA.NN`.
+03. severity is one of **critical**, a design that contradicts itself or cannot be built, **high**, a defect a team would hit early and pay to unwind, **medium**, a contained defect or an evidenced best practice gap, and **low**, worth recording.
+04. category is one of `internal consistency`, `best practice`, `implementation risk` and `traceability`.
+05. below the table, one `### <id> <title>` section per finding. It opens with a `**docs**` line naming the affected documents by alias, then states what is wrong and where, why it matters, and a suggested resolution or a question for the owning role.
+
+## Related skills
+
+- [documentation-style](../documentation-style/SKILL.md) for prose and line rules.
+- [markdown-tables](../markdown-tables/SKILL.md) for the summary table.

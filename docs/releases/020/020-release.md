@@ -42,9 +42,11 @@ Exchange rate movements appear as a separate forex gain or loss line on the peri
 
 RedBooks reports an income statement and a balance sheet in the reporting currency, each in a year view and a month view. The year view shows the twelve months of a year side by side, and clicking a month opens its month view. The month view drills down from each line to its transactions. The income statement shows each category with its subcategories beneath it. Both statements and the transaction lists export to CSV.
 
+Each closed month is reported from a stored snapshot. On the 1st of every month, RedBooks generates the snapshot of the month before, and the current month is reported month to date on request. A past month can be re-run, which stores a new version and keeps the old ones, and every report shows the newest version. An edit to a month after its snapshot marks the snapshot stale, and the user sees the lines that drifted and the changes behind them before re-running it. Changing the reporting currency asks for confirmation and which past years to regenerate, and statements in the old currency stay in the history.
+
 ### Users and login
 
-Users sign in with OAuth. Each user owns their own accounts, categories and transactions.
+Users sign in with OAuth. Each user owns their own accounts, categories and transactions. Each user sets their timezone, Asia/Singapore by default, which sets the dates of new transactions and the month boundaries of the statements.
 
 ### Mobile layout
 
@@ -52,7 +54,7 @@ Every page is designed for a phone screen. Testing runs on a real phone connecte
 
 ### HomeBudget history
 
-The data migration loads the full HomeBudget history into RedBooks from a snapshot the user exports from the HomeBudget app. This covers accounts, categories mapped to the consolidated model, and all historical transactions and transfers. The user records monthly opening balances and the snapshot date closing balance for select accounts in an account balances file, and both sides of every transfer between currencies in an fx transfers file. Automated validation checks the migrated balances and transfers against these files. Files the app produces, such as CSV exports, are stored on the local host.
+The HomeBudget account `02` snapshot, a dated copy of the account `02` HomeBudget database, is the seed, loaded as-is from day one, and the account `01` migration loads the older history after the release's features are validated. Together they cover accounts, categories mapped to the consolidated model, and all historical transactions and transfers. HomeBudget holds each account's reconciled balance point and both sides of every transfer between currencies. Automated validation checks the loaded balances and transfers against the figures HomeBudget itself holds in the snapshot. Files the app produces, such as CSV exports, are stored on the local host.
 
 ### Lessons applied
 
@@ -98,6 +100,7 @@ Features in later releases:
 | 14 | statement loaders    | 0.4.0   |
 | 15 | stm txn reconcile    | 0.4.0   |
 | 18 | reconcile algorithm  | 0.4.0   |
+| 21 | forecast             | tbd     |
 
 ## Milestones
 
@@ -112,15 +115,15 @@ Each phase produces what the next one depends on, so the release defines what it
 
 ### Design: Define the release
 
-The requirements milestone states the user outcomes and scope. Agent skills customization follows straight after, so the Claude Code agents and skills match the RedBooks stack and conventions before they help write the test and design documents. The test strategy and test cases follow from the requirements, so every requirement has a defined way to prove it works before the design commits to a solution. The design comes last in this phase. It covers workflows, phone-layout pages, architecture, the ledger and data model, multiple currencies, API endpoints and the local environment. The design starts from a review of the HomeBudget categories, accounts and historical transactions, which shapes the consolidated category model.
+The requirements milestone states the user outcomes and scope. Agent skills customization follows straight after, so the Claude Code agents and skills match the RedBooks stack and conventions before they help write the test and design documents. The test strategy and its case catalogue follow from the requirements, so every requirement has a defined way to prove it works before the design commits to a solution, and each feature reconciles its own cases with the design before it is built. The design comes last in this phase. It covers workflows, phone-layout pages, architecture, the ledger and data model, multiple currencies, API endpoints and the local environment. The design starts from a review of the HomeBudget categories, accounts and historical transactions, which shapes the consolidated category model.
 
 ### Setup: Prepare the foundation
 
-The foundation milestones set up everything feature work relies on. The local dev and test env gives a repeatable Docker setup for the database, API and web app, with a tunnel to a phone and a mobile emulator for UI testing. Database seed data draws on the HomeBudget review, so tests and demos run on realistic accounts and transactions in SGD and USD. Validation utilities are the scripts that exercise a change end to end and confirm it works. Building these first means every feature after them is validated the same way from the start.
+The foundation milestones set up everything feature work relies on. The local dev and test env gives a repeatable Docker setup for the database, API and web app, with a tunnel to a phone and a mobile emulator for UI testing. The schema and account 02 seed milestone builds the schema and loads the user's real accounts and transactions as-is, in SGD and USD. The validation utilities that follow are the scripts that exercise a change end to end and check it against that data. Building these first means every feature after them is validated the same way from the start.
 
 ### Implement: Build the features
 
-The feature milestones deliver the user-facing capability in dependency order. OAuth login comes first because every other feature belongs to a signed-in user. The currency model follows, covering the money type, the supported currencies, the reporting currency setting and exchange rate fetching and storage, since every amount in the ledger depends on it. Txn and accounts builds on it, covering the general ledger, expenses, income, transfers, transfers between currencies and the consolidated category model. Financial statements builds the income statement and balance sheet from that ledger data, with the forex gain or loss line and CSV export. Data migrate comes last in this phase. It loads the full HomeBudget history into the finished data model and working ledger.
+The feature milestones deliver the user-facing capability in dependency order. OAuth login comes first because every other feature belongs to a signed-in user. An audit skills checkpoint follows it, so the remaining features start from the rules the release has confirmed so far. The currency model follows, covering the money type, the supported currencies, the reporting currency setting and exchange rate fetching and storage, since every amount in the ledger depends on it. Txn and accounts builds on it, covering the general ledger, expenses, income, transfers, transfers between currencies and the consolidated category model. Financial statements builds the income statement and balance sheet from that ledger data, with the forex gain or loss line and CSV export. The homebudget account 01 migrate milestone comes last in this phase, and migrates the account `01` history into the finished data model and working ledger.
 
 ### Release: Deliver and release
 

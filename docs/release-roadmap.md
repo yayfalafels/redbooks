@@ -57,6 +57,7 @@ __release features__
 | 18 | reconcile algorithm  | manual             | --              | --                  |
 | 19 | split txn            | manual             | manual          | X                   |
 | 20 | pdf export           | -----              | --              | X                   |
+| 21 | forecast             | fin stm gs         | --              | --                  |
 
 | id | feature              | reconciled ledger  | beta app store          |
 | -- | -------------------- | ------------------ | ----------------------- |
@@ -81,3 +82,4 @@ __release features__
 | 18 | reconcile algorithm  | rules + manual     | rules + gen ai          |
 | 19 | split txn            | X                  | X                       |
 | 20 | pdf export           | X                  | X                       |
+| 21 | forecast             | tbd                | tbd                     |

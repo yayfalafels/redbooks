@@ -1,89 +1,106 @@
 <!--
-boilerplate feature-tracker doc, matching this repo's actual conventions
-(see docs/features/*.md and docs/assessments/*.md for real examples).
-
-copy to docs/features/<NN>-<short-name>.md or docs/assessments/<NN>-<short-name>.md,
-fill in <angle-bracket> placeholders, then delete this comment block.
-
-<F>  = this feature's two-digit id, e.g. 12
-fill sections top-to-bottom, but only as far as the current stage - a later
-section stays a one-line stub until the stage before it is settled (see
-tracker-pattern/REFERENCE.md, "the seven sections, in fill order").
+Boilerplate feature tracker.
+Copy to docs/releases/<release>/features/<release>.<F>-<short-name>.md, fill in the <angle-bracket> placeholders, then delete this comment.
+<F> is the feature's two-digit id, such as 12.
+Fill sections top to bottom only as far as the current stage. A later section stays a one-line stub until the stage before it is settled, per tracker-pattern/REFERENCE.md.
 -->
 # <feature name, title case> - Feature tracker
->Review the guidelines before performing any actions including edits on the document
+
+## Guideline
+
+review and strictly follow these relevant skills when performing tasks for this feature implementation and working with this document
+
+- documentation-style
+- markdown-tables
+- feature-implementation-guide
 
 ## <F> (pending) <feature name, lower case>
 
+<one paragraph: what this feature builds and why>
+
 ## Contents
 
+- [Guideline](#guideline)
 - [Tasks](#tasks)
 - [Scope](#scope)
 - [References](#references)
 - [Design](#design)
-  - [<concern area>](#concern-area)
 - [Test cases](#test-cases)
 - [Edit locations](#edit-locations)
 - [Implement](#implement)
 - [Validate](#validate)
-- [Guideline](#guideline)
 
 ## Tasks
 
-| id      | seq | status  | milestone      |
-| ------- | --- | ------- | -------------- |
-| <F>.01  | 01  | open    | design         |
-| <F>.02  | 02  | pending | implement      |
-| <F>.IS  | 03  | pending | validate       |
+| id     | seq | status  | task           |
+| ------ | --- | ------- | -------------- |
+| <F>.01 | 01  | open    | scope          |
+| <F>.02 | 02  | pending | design         |
+| <F>.03 | 03  | pending | test cases     |
+| <F>.04 | 04  | pending | edit locations |
+| <F>.05 | 05  | pending | implement      |
+| <F>.IS | 06  | pending | validate       |
 
 ## Scope
 
-<short plain-language statement of what's being built and why>
+<plain-language statement of what is built>
 
-- all steps can be executed by an autonomous claude ai agent with access to terminal using re-runnable idempotent scripts
-- **out of scope** - <explicit exclusions / deferred items>
-- **closure** - <acceptance condition, written before design exists>
+In scope:
+
+01. <item>
+
+Out of scope:
+
+01. <item>
+
+**closure**
+
+- **<F>.CK.01** <acceptance criterion, written before the design exists>
 
 ## References
 
-- **<name>** `<path/to/related/doc/or/script>`
+- **<alias>**: [<file>](<relative/path>)
 
 ## Design
 
 ### <concern area>
 
-<decision + rationale>
+<the chosen specification and its reason>
 
-**implementation decision** - <where the ask was ambiguous, what you chose, what you didn't>
+**implementation decision** - <where the ask was ambiguous, the choice, and its reason>
 
-**deviation** - <where this departs from an existing design doc or convention, and why>
+**deviation** - <where this departs from a higher-level doc or convention, and why>
 
 ## Test cases
 
 _test strategy_
 
-1. **self-report** - <what the code's own [PASS]/[FAIL] log output proves>
-2. **<independent layer>** - <what it checks against, without reading the code's own output>
+01. **self-report** - <what the code's own [PASS] and [FAIL] output proves>
+02. **<independent layer>** - <what it checks against, reading nothing the code produced>
 
-| id        | scope-item | layer | check                |
-| --------- | ---------- | ----- | --------------------- |
-| <F>.TC.01 | <F>.CK.01  | ...   | <what passes/fails>   |
+| id        | scope-item | layer | check         |
+| --------- | ---------- | ----- | ------------- |
+| <F>.TC.01 | <F>.CK.01  | ...   | <what passes> |
 
 **tools** - reproduce independently:
 
 ```bash
-<copy-pasteable command to re-run this check by hand>
+<copy-pasteable command that reruns this check by hand>
 ```
 
 ## Edit locations
 
-| id        | path        | change            |
-| --------- | ----------- | ----------------- |
-| <F>.EL.01 | <path>      | <what changes>     |
+| id        | path   | change         |
+| --------- | ------ | -------------- |
+| <F>.EL.01 | <path> | <what changes> |
+
+Not expected to change:
+
+01. <file or contract>
 
 ## Implement
 
-### 1. <step name>
+### <F>.05.01 <step name>
 
 edit locations: `<F>.EL.01`
 
@@ -91,43 +108,30 @@ _expand when this step starts_
 
 ## Validate
 
-<what was actually run, against what evidence, once implementation is done>
+<what was run, against what evidence, once implementation is done>
 
-Log artifacts (`.dev/logs/`, gitignored - see commands below to inspect or reproduce):
-
-| id | log file             | exit | evidence            |
-| -- | --------------------- | ---- | --------------------- |
-| 01 | `<ts>-<F>.<n>-<task>.log` | 0    | <what it shows>     |
+| id | log file                  | exit | evidence        |
+| -- | ------------------------- | ---- | --------------- |
+| 01 | `<ts>-<F>.<n>-<task>.log` | 0    | <what it shows> |
 
 **secondary validation** - reproduce independently:
 
 ```bash
-<copy-pasteable command bypassing the feature's own scripts>
+<copy-pasteable command that bypasses the feature's own scripts>
 ```
 
 **Issues**
 
-- inventory all first out exceptions and issues encountered in this table
-- for each issue, create an issue section and use it to document diagnostics and resolution steps - see
-  `validation/REFERENCE.md` and its `templates/issue-diagnostic-section.md` boilerplate
+| id        | seq | status  | issue                   |
+| --------- | --- | ------- | ----------------------- |
+| <F>.IS.01 | 01  | pending | \<first out exception\> |
 
-| id       | seq | status  | issue                    |
-| -------- | --- | ------- | -------------------------- |
-| <F>.IS.01| 01  | pending | \<first out exception\>    |
+<!-- paste one validation/templates/issue-diagnostic-section.md block per issue row here -->
 
-<!-- paste one templates/issue-diagnostic-section.md block per row above, in place of this comment -->
+**lesson observations**
+
+- <`lesson observation LT.NN`: what happened, with the evidence>
 
 **user actions**
 
-- <anything only a human had to do - GUI-only tool, third-party auth, an account only a person holds>
-
-## Guideline
-
-### instructions
-
-review and strictly follow these relevant skills when performing tasks for this feature implementation and working with this document
-
-### relevant skills
-
-- markdown-tables
-- feature-implementation-guide
+- <anything only a human had to do, such as a GUI-only tool, a third-party sign-in or an account only a person holds>
