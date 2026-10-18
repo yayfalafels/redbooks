@@ -14,7 +14,7 @@ Seed data describes a history that could have happened. Counts, balances and dat
 
 **why**: seeded records covered every outcome code but formed an impossible history: events before their run started, repeats in one run, and typed counts that disagreed with the rows. Oracles, API checks and page checks all read those rows.
 
-Example: the loader computes each account's closing balance from its opening balance point and the seeded entries, and asserts it against the balance file.
+Example: the loader computes each account's closing balance from its reconciled balance point and the seeded entries, and asserts it against the balance file.
 
 ### pin every generator input and review the diff of generated files
 

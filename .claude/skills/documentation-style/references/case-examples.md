@@ -13,6 +13,7 @@ One before and after pair per rule in `SKILL.md`, for calibrating a review. Each
 - [07 table of contents](#07-table-of-contents)
 - [08 alias references](#08-alias-references)
 - [09 chosen specification](#09-chosen-specification)
+- [10 no revision language](#10-no-revision-language)
 
 ## 01 hard-wrapped line breaks
 
@@ -161,4 +162,24 @@ After:
 
 ```
 Each resource has its own router. Writes with invariants go through the service that enforces them.
+```
+
+## 10 no revision language
+
+Before, in a design doc:
+
+```
+The transfer model was updated from paired expense and income rows to a single signed transfer entry, to account for the forex gain or loss found in the HomeBudget review. Previously, transfers between currencies were not supported.
+```
+
+After, in the design doc:
+
+```
+A transfer is one signed entry between two accounts. A transfer between currencies posts the forex gain or loss to its own income statement line.
+```
+
+After, in the feature tracker under the milestone that made the change:
+
+```
+The HomeBudget review found cross-currency transfers with a forex gain or loss. The transfer model moved from paired expense and income rows to one signed transfer entry.
 ```

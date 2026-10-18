@@ -39,9 +39,9 @@ This doc defines the two financial statements RedBooks reports, the income state
 04. **the income statement groups the two-level category model into sections.** The category model has categories and their subcategories, and each subcategory is a detail line. The statement section is not a third level of the model but a required attribute of each category, which adds a section total above its category lines. A category line totals its subcategories, and a section totals its categories. The sections are personal income, investment P and L, rental, cost of living expenses (COLE) and discretionary.
 05. **taxes deduct inside personal income.** Taxes stays an expense category in the books, and the statement places it in personal income as taxes paid.
 06. **the balance sheet nests net worth over its sections.** Net worth is illiquid and retirement plus liquid net worth, and liquid net worth is cash and bank accounts, liquid investments and credit. Every account type belongs to one section.
-07. **liabilities show their signed negative balance.** The balance sheet never flips a sign, so every section and net worth is the plain sum of the lines beneath it. This settles 02.OD.10 and WI.06.
-08. **brokerage cash is the one account whose section follows its sign.** A positive balance sits in cash and bank accounts and a negative one in credit.
-09. **the forex gain or loss is computed when a statement is built.** For each foreign currency account it is the closing reporting value, less the opening reporting value, less the period's entries in the reporting currency. It is never posted to the ledger, and it appears on both statements.
+07. **liabilities show their signed negative balance.** The balance sheet never flips a sign, so every section and net worth is the plain sum of the lines beneath it. This settles 02.OD.10.
+08. **margin cash is credit at any balance.** The cash of a margin brokerage account is a margin credit account in the credit section, whether its balance is positive or negative. No account changes section with its sign.
+09. **the forex gain or loss is computed when a statement is built.** Every income, expense and transfer entry converts at the month-end rate of the month before, and every balance at the month-end rate of its own month, so only the closing balance takes up the month's rate change. It has two parts. For each foreign currency account, the translation gain or loss is the closing reporting value, less the opening reporting value, less the period's entries in the reporting currency. For each transfer between currencies, the transfer rate difference is the booked value received less the booked value sent, both at the month-end rate of the month before. It is never posted to the ledger, and it appears on both statements.
 10. **the two statements reconcile exactly.** Closing net worth equals opening net worth plus net income, plus opening balances and movements with accounts outside net worth. RedBooks builds both statements from one ledger, so the gap is zero by construction, and a non-zero gap fails the build.
 11. **the statement data is separate from its presentation.** A build stores detail lines, read from the ledger, and summary lines, the totals and derived lines computed from them, in two tables. The presentation view arranges both into the layout, adds labels, levels and the figures that span months, and flips expense signs only when it renders.
 
@@ -67,6 +67,7 @@ This doc names accounts by role and uses illustrative amounts, per LL.08 of the 
 05. **SP.05 transfers and opening balances** never reach the income statement, per AR.09 and AR.10.
 06. **SP.06 a closed month** reads its current snapshot version, and the current month is month to date, built on request, per the financial statements milestone of the **release milestones**.
 07. **SP.07 zero lines.** Every active category, subcategory and account shows a line in each view, at 0.00 when nothing moved, per 02.FS.13. A retired one shows only in a view where its amount is non-zero.
+08. **SP.08 tags** are labels on transactions and change no statement line, per AR.08 of the **accounting rules**. A pooled account shows on the balance sheet at its total balance.
 
 ## Statement data model
 
@@ -80,20 +81,21 @@ A statement build writes a snapshot version, per the financial statements milest
 
 Every line of this doc is one of the three kinds.
 
-| id    | line                                       | kind    | key   |
-| ----- | ------------------------------------------ | ------- | ----- |
-| SL.01 | subcategory line                           | detail  | LK.04 |
-| SL.02 | retirement fund line, RC.04                | detail  | LK.05 |
-| SL.03 | account line                               | detail  | LK.06 |
-| SL.04 | transfer route line, CT.03                 | detail  | LK.08 |
-| SL.05 | forex of an account                        | detail  | LK.09 |
-| SL.06 | category line                              | total   | LK.03 |
-| SL.07 | section total, IS.01 to IS.05              | total   | LK.02 |
-| SL.08 | subsection total, one per account type     | total   | LK.07 |
-| SL.09 | NW.01 to NW.06                             | total   | LK.01 |
-| SL.10 | SB.01 to SB.05, PI.01 to PI.06             | derived | LK.01 |
-| SL.11 | TE.01 to TE.04, RC.01 to RC.03             | derived | LK.01 |
-| SL.12 | NM.01 to NM.06, CT.01, CT.02 and CT.04     | derived | LK.01 |
+| id    | line                                   | kind    | key   |
+| ----- | -------------------------------------- | ------- | ----- |
+| SL.01 | subcategory line                       | detail  | LK.04 |
+| SL.02 | retirement fund line, RC.04            | detail  | LK.05 |
+| SL.03 | account line                           | detail  | LK.06 |
+| SL.04 | transfer route line, CT.03             | detail  | LK.08 |
+| SL.05 | forex of an account                    | detail  | LK.09 |
+| SL.06 | transfer rate difference of a transfer | detail  | LK.10 |
+| SL.07 | category line                          | total   | LK.03 |
+| SL.08 | section total, IS.01 to IS.05          | total   | LK.02 |
+| SL.09 | subsection total, one per account type | total   | LK.07 |
+| SL.10 | NW.01 to NW.06                         | total   | LK.01 |
+| SL.11 | SB.01 to SB.05, PI.01 to PI.06         | derived | LK.01 |
+| SL.12 | TE.01 to TE.04, RC.01 to RC.03         | derived | LK.01 |
+| SL.13 | NM.01 to NM.06, CT.01, CT.02 and CT.04 | derived | LK.01 |
 
 The detail lines table holds one row per detail line.
 
@@ -101,13 +103,13 @@ The detail lines table holds one row per detail line.
 | ----- | ---------------- | ------------------------------------------------------ |
 | DL.01 | snapshot version | the version the line belongs to                        |
 | DL.02 | statement        | `is` or `bs`                                           |
-| DL.03 | line key         | LK.04, LK.05, LK.06, LK.08 or LK.09                    |
+| DL.03 | line key         | LK.04, LK.05, LK.06, LK.08, LK.09 or LK.10             |
 | DL.04 | subcategory      | the subcategory of a subcategory line                  |
 | DL.05 | account          | the account of an account, fund or forex line          |
-| DL.06 | counter account  | the receiving account of a route, DL.05 its sender     |
+| DL.06 | counter account  | the receiving account of a route or XD, DL.05 sender   |
 | DL.07 | amount           | signed, in the reporting currency                      |
 | DL.08 | account amount   | signed, in the account currency, for a foreign account |
-| DL.09 | forex inputs     | B_r, T_r and E_r, for a forex line                     |
+| DL.09 | forex inputs     | B_r, T_r and E_r for FX, R_in and R_out for XD         |
 
 The summary lines table holds one row per total and derived line.
 
@@ -179,13 +181,13 @@ Every income and expense entry reaches exactly one detail line, its subcategory,
 
 all show up in net income
 
-| id    | section            | key             | category kind   | 
-| ----- | ------------------ | --------------- | --------------- | 
-| IS.01 | personal income    | `personal`      | income, expense | 
-| IS.02 | investment P and L | `investment`    | income, expense | 
-| IS.03 | rental             | `rental`        | expense         | 
-| IS.04 | COLE ex rent       | `cole`          | expense         | 
-| IS.05 | discretionary      | `discretionary` | expense         | 
+| id    | section            | key             | category kind   |
+| ----- | ------------------ | --------------- | --------------- |
+| IS.01 | personal income    | `personal`      | income, expense |
+| IS.02 | investment P and L | `investment`    | income, expense |
+| IS.03 | rental             | `rental`        | expense         |
+| IS.04 | COLE ex rent       | `cole`          | expense         |
+| IS.05 | discretionary      | `discretionary` | expense         |
 
 01. **each category carries one section.** The section is a required attribute of the category, so every entry reaches a line by constraint.
 02. **IS.01** holds the income categories of personal income and the expense category taxes. **IS.02** holds the investment income categories and any loss expense category the accounts topic, 04.06, adds under AR.13.
@@ -198,13 +200,13 @@ all show up in net income
 
 Every summary line is derived. Amounts are signed: income positive, expenses negative.
 
-| id    | line               | formula                                          |
-| ----- | ------------------ | ------------------------------------------------ |
-| SB.01 | net income         | SB.03 + SB.04 + SB.05                            |
-| SB.02 | cash savings       | SB.03 - PI.01                                    |
-| SB.03 | gross savings      | PI.04 + TE.01                                    |
-| SB.04 | investment P and L | the IS.02 section total                          |
-| SB.05 | forex gain or loss | the sum of FX for every foreign currency account |
+| id    | line               | formula                                       |
+| ----- | ------------------ | --------------------------------------------- |
+| SB.01 | net income         | SB.03 + SB.04 + SB.05                         |
+| SB.02 | cash savings       | SB.03 - PI.01                                 |
+| SB.03 | gross savings      | PI.04 + TE.01                                 |
+| SB.04 | investment P and L | the IS.02 section total                       |
+| SB.05 | forex gain or loss | the sum of FX per account and XD per transfer |
 
 01. **SB.01 net income** is the change in net worth the period's income, expenses and exchange rates produced. It equals the sum of every income and expense entry in the period plus SB.05.
 02. **SB.02 cash savings** is the part of gross savings the user can spend. It removes the retirement contributions, which land in retirement funds.
@@ -313,7 +315,7 @@ Each subcategory is a detail line. The table lists the expense subcategories of 
 | ----- | ------------- | --------------------- | -------------------------------------- |
 | SC.01 | rent          | rent                  | rent on the home                       |
 | SC.02 | cole          | food                  | groceries and everyday meals           |
-| SC.03 | cole          | transport             | metro and bus fares                    |
+| SC.03 | cole          | transport             | metro and bus fares, bicycle hire      |
 | SC.04 | cole          | healthcare            | out-of-pocket medical costs            |
 | SC.05 | cole          | grooming              | haircuts and grooming                  |
 | SC.06 | cole          | mobile                | mobile phone plan                      |
@@ -332,8 +334,8 @@ Each subcategory is a detail line. The table lists the expense subcategories of 
 | SC.19 | discretionary | fitness               | gym, classes protein and sport         |
 | SC.20 | discretionary | drinks                | coffee and soft drinks out             |
 | SC.21 | discretionary | alcohol               | alcoholic drinks                       |
-| SC.22 | discretionary | social                | friends family and dating              |
-| SC.23 | discretionary | dating                | dates                                  |
+| SC.22 | discretionary | social                | friends family                         |
+| SC.23 | discretionary | dating                | romantic relationships                 |
 | SC.24 | discretionary | software              | software and app subscriptions         |
 | SC.25 | discretionary | ai services           | AI service subscriptions               |
 | SC.26 | discretionary | it hardware           | computers, phones, accessories         |
@@ -343,7 +345,7 @@ Each subcategory is a detail line. The table lists the expense subcategories of 
 | SC.30 | discretionary | movies music          | films, music and streaming             |
 | SC.31 | discretionary | fines                 | fines and penalties                    |
 | SC.32 | discretionary | taxi                  | taxis and ride hailing                 |
-| SC.33 | discretionary | bike                  | bike hire                              |
+| SC.33 | discretionary | forex charges         | costs from forex                       |
 | SC.34 | discretionary | professional services | agents, banking and legal fees         |
 | SC.35 | discretionary | donations             | donations                              |
 | SC.36 | discretionary | pets and plants       | pets and plants                        |
@@ -354,11 +356,11 @@ Each subcategory is a detail line. The table lists the expense subcategories of 
 | SC.41 | discretionary | massage               | massage and spa                        |
 | SC.42 | discretionary | other                 | discretionary spending no line matches |
 
-01. **SC.03 and SC.32** only metro and bus fares are cost of living. Taxis are discretionary.
+01. **SC.03 and SC.32** metro and bus fares and bicycle hire are cost of living. Taxis are discretionary.
 02. **SC.05** grooming is cost of living, beside out-of-pocket healthcare.
 03. **SC.16 and SC.17** are cost of living.
 04. **SC.25** covers subscriptions to artificial intelligence (AI) services.
-05. **SC.34** holds the card foreign exchange fee of AR.12 item 05 of the **accounting rules**.
+05. **SC.33** holds the card foreign exchange fee of AR.12 item 05 of the **accounting rules**.
 06. **SC.40** a project is a bounded piece of spending the user wants to see as one line, such as a home move. Project names stay out of committed docs, per LL.08 of the **lessons learned**.
 07. **SC.42** is the explicit subcategory for discretionary spending that no specific subcategory covers. Every entry names its subcategory, so no line is a catch-all computed from what the others leave.
 08. **a new subcategory** belongs to a category, which carries its section, so it reaches a section with no further mapping.
@@ -374,7 +376,7 @@ This block tracks the contributions to retirement funds. It is informational, an
 | RC.03 | total contributions   | RC.01 + RC.02                                      |
 | RC.04 | one line per fund     | the RC.03 amount that landed on that fund          |
 
-01. **RC.01** is the sum of the positive entries on `retirement` accounts that belong to salary transactions, per CE.08, plus transfers into `retirement` accounts from other accounts in net worth, such as a voluntary top-up.
+01. **RC.01** is the sum of the positive entries on `retirement` accounts that belong to salary transactions, per CE.08, plus transfers into `retirement` accounts from other accounts in net worth, such as the retirement fund payment sources of a salary split or a voluntary top-up.
 02. **RC.04** shows one line per `retirement` account. The fund lines sum to RC.03 exactly, so the block shows how the contributions split across funds.
 03. the block shows only for a user with at least one `retirement` account.
 
@@ -412,35 +414,34 @@ Balance sheet
 └── Account detail
     ├── cash and bank accounts
     │   ├── wallet cash
-    │   ├── bank accounts
-    │   ├── savings accounts
-    │   └── clearing
+    │   └── bank accounts
     ├── credit
     │   ├── credit cards
-    │   └── other credit
+    │   ├── other credit
+    │   └── margin credit
     ├── liquid investments
     └── illiquid and retirement
 ```
 
 ### Account types
 
-The account type is the balance sheet subsection. Every account in net worth carries one of eight types, and each type belongs to one section. This settles WI.07.
+The account type is the balance sheet subsection. Every account in net worth carries one of eight types, and each type belongs to one section, whatever the sign of its balance.
 
-| id    | account type    | section                 | subsection    | roles                         |
-| ----- | --------------- | ----------------------- | ------------- | ----------------------------- |
-| TY.01 | wallet cash     | cash and bank accounts  | wallet cash   | cash, stored value, e-wallets |
-| TY.02 | bank account    | cash and bank accounts  | bank accounts | bank accounts                 |
-| TY.03 | savings account | by sign                 | by sign       | cash of an investment account |
-| TY.04 | clearing        | cash and bank accounts  | clearing      | cost centers                  |
-| TY.05 | credit card     | credit                  | credit cards  | credit cards                  |
-| TY.06 | other credit    | credit                  | other credit  | see note 04                   |
-| TY.07 | investment      | liquid investments      | none          | see note 05                   |
-| TY.08 | retirement      | illiquid and retirement | none          | see note 06                   |
+| id    | account type  | section                 | subsection    | roles                         |
+| ----- | ------------- | ----------------------- | ------------- | ----------------------------- |
+| TY.01 | wallet cash   | cash and bank accounts  | wallet cash   | cash, stored value, e-wallets |
+| TY.02 | bank account  | cash and bank accounts  | bank accounts | see note 02                   |
+| TY.03 | clearing      | cash and bank accounts  | clearing      | cost centers                  |
+| TY.04 | credit card   | credit                  | credit cards  | credit cards                  |
+| TY.05 | other credit  | credit                  | other credit  | see note 04                   |
+| TY.06 | margin credit | credit                  | margin credit | cash of a margin account      |
+| TY.07 | investment    | liquid investments      | none          | see note 05                   |
+| TY.08 | retirement    | illiquid and retirement | none          | see note 06                   |
 
 01. **TY.01** holds physical cash and stored value the user owns: transit cards, prepaid cards and e-money wallets.
-02. **TY.03** is the cash account of an investment: brokerage cash, peer lending cash and an exchange wallet. Its balance can sit on either side of zero, so its section follows its sign at each balance date. A positive or zero balance sits in cash and bank accounts under savings accounts, and a negative one in credit under other credit. It is the only type whose section depends on its balance.
-03. **TY.04** is a cost center. A cost center returns to zero once each split is itemised, per AR.07, but a split whose records span a month end leaves a balance for a few days, and the line shows it.
-04. **TY.06** holds every other liability and every claim the user holds on a third party: loans, bill accounts, a household share account, tax payable, security deposits and receivables from friends. Each balance keeps its sign, so a deposit or receivable adds to the section and a loan or bill reduces it.
+02. **TY.02** holds bank accounts, current and savings alike, and the cash account of an investment that cannot borrow: brokerage cash, peer lending cash and an exchange wallet. Its balance stays at or above zero. **TY.06** is the cash of a margin brokerage account, which can borrow against its positions. Its balance can be positive or negative, and it stays in credit either way: a positive balance adds to the section and a negative one reduces it, as TY.05 balances do.
+03. **TY.03** is a cost center, the clearing account a split runs through, one per currency, per AR.07. Every date of a split falls in one calendar month, so a cost center returns to zero within the month and holds 0.00 at every month end. It adds nothing to net worth, and the balance sheet shows no line or subsection for it. CK.06 fails a build where a cost center is not at 0.00.
+04. **TY.05** holds every other liability and every claim the user holds on a third party: loans, bill accounts, a household share account, tax payable, security deposits and receivables from friends. Each balance keeps its sign, so a deposit or receivable adds to the section and a loan or bill reduces it.
 05. **TY.07** holds the position accounts of investments: brokerage and depository positions, peer lending notes, a precious metal holding and a crowdfunding stake.
 06. **TY.08** holds retirement funds and retirement brokerage accounts. A retirement fund that also pays medical bills directly stays `retirement`.
 
@@ -457,7 +458,7 @@ The opening block reconciles the two statements.
 | NM.05 | opening net worth           | NW.01 at the end of the month before     |
 | NM.06 | closing net worth           | NM.05 + NM.04                            |
 
-01. **NM.02** is the sum of the opening balance equity entries of AR.10 on accounts in net worth, dated in the month. It is non-zero only in a month where an account enters the books.
+01. **NM.02** is the sum of the opening balance equity entries of AR.10 on accounts in net worth, dated in the month. It is non-zero only in the month of an account's opening date. The opening balance derives from the account's reconciled balance point, per AR.10 and AR.11, so it changes when the point or an entry dated before the point changes.
 02. a reconciled balance point that moves changes the balances it covers. It is not a movement of the month: it rewrites history, and the snapshots it covers go stale, per the financial statements milestone of the **release milestones**.
 03. **NM.03** is the net of transfers between accounts in net worth and accounts outside it, on the net worth side, less any income and expense entries posted on accounts outside net worth. It is zero for a user with no accounts outside net worth.
 04. **NM.06** equals NW.01 of the same month exactly, per CK.03.
@@ -466,18 +467,18 @@ The opening block reconciles the two statements.
 
 Each line is the signed sum of the lines beneath it, in the reporting currency.
 
-| id    | line                    | formula                                        |
-| ----- | ----------------------- | ---------------------------------------------- |
-| NW.01 | net worth               | NW.02 + NW.03                                  |
-| NW.02 | illiquid and retirement | TY.08 accounts                                 |
-| NW.03 | liquid net worth        | NW.04 + NW.05 + NW.06                          |
-| NW.04 | cash and bank accounts  | TY.01, TY.02, TY.04 and TY.03 at or above zero |
-| NW.05 | liquid investments      | TY.07 accounts                                 |
-| NW.06 | credit                  | TY.05, TY.06 and TY.03 below zero              |
+| id    | line                    | formula                         |
+| ----- | ----------------------- | ------------------------------- |
+| NW.01 | net worth               | NW.02 + NW.03                   |
+| NW.02 | illiquid and retirement | TY.08 accounts                  |
+| NW.03 | liquid net worth        | NW.04 + NW.05 + NW.06           |
+| NW.04 | cash and bank accounts  | TY.01 and TY.02 accounts        |
+| NW.05 | liquid investments      | TY.07 accounts                  |
+| NW.06 | credit                  | TY.04, TY.05 and TY.06 accounts |
 
 01. **NW.01 net worth** is the sum of the signed balances of every account in net worth, per AR.04 of the **accounting rules**.
 02. **NW.03 liquid net worth** is what the user could turn into cash at short notice, net of what they owe.
-03. **liability presentation.** Every balance keeps its sign on screen, in the API, in the snapshot and in the CSV export. NW.06 is usually negative and reduces liquid net worth by plain addition. This settles 02.OD.10 and WI.06.
+03. **liability presentation.** Every balance keeps its sign on screen, in the API, in the snapshot and in the CSV export. NW.06 is usually negative and reduces liquid net worth by plain addition. This settles 02.OD.10.
 
 ### Net cash transfers
 
@@ -486,13 +487,14 @@ This informational block shows the month's transfers that move value between bal
 | id    | line                      | definition                                     |
 | ----- | ------------------------- | ---------------------------------------------- |
 | CT.01 | retirement contributions  | transfers into TY.08 accounts                  |
-| CT.02 | investment buys and sells | transfers between TY.03 and TY.07 accounts     |
+| CT.02 | investment buys and sells | between TY.07 and TY.02 or TY.06 accounts      |
 | CT.03 | one line per route        | transfers between currencies, per account pair |
 | CT.04 | net cash transfers        | CT.01 + CT.02 + the CT.03 lines                |
 
 01. each line is the sum of the receiving side's reporting amounts. A route line names its sending and receiving account, and shows the amount in the sending account's currency beside the reporting amount.
 02. **CT.01** counts transfers only. The salary inflows of RC.01 are income and show in [Retirement contributions](#retirement-contributions).
 03. a route line shows only in a month with a transfer on that route.
+04. the payment sources of a split are part of the split, and no line of this block counts them. A split's retirement fund sources reach RC.01.
 
 ### Account detail
 
@@ -500,39 +502,52 @@ Account detail lists every account in net worth under its section and subsection
 
 ## Currency translation and forex
 
-The rate source, its storage and the user's overrides belong to the multi currency and forex topic, 04.08. The rounding of one converted amount follows 02.OD.01 of the **test cases**, set by that topic.
+The rate source and its storage belong to the multi currency and forex topic, 04.08. Every converted amount rounds half up to the decimal places of its target currency. A date with no published rate, such as a weekend or a holiday, takes the last published rate before it.
 
-01. **CT rate on a transaction date.** The rate for a currency pair on a date is the user's recorded rate for that date where one exists, and otherwise the stored fetched rate, per AR.12 and 02.FS.07.
-02. **income and expense lines** convert each entry at the rate on its transaction date, and round each converted entry to the reporting currency's decimal places before summing. Both entries of an income or expense transaction are in one currency, so they convert to the same amount and still balance. This adopts the assumption of 02.OD.02 in the **test cases**.
-03. **a transfer between currencies has one reporting amount.** When either side is in the reporting currency, that side's amount is the transfer's reporting amount. Otherwise the sending side converts at the rate on its date. The receiving side carries the same reporting amount with the opposite sign, so the transfer adds nothing to net income, per AR.09. The ledger keeps both stored amounts, per 02.FS.08.
-04. **balance sheet lines** convert each foreign currency balance at the month-end rate, the rate for the last day of the month. The current month uses today's rate.
-05. **the forex gain or loss of one account**, for a month, is computed from these reporting amounts.
+01. **two month-end rates per month.** The month-end rate for a currency pair is the rate for the last day of a month: the rate fetched from the rate source, or the user's recorded rate for that date where the user overrides it, per AR.12. For month N, r_(N-1) is the month-end rate of the month before, and r_N is the month-end rate of month N, today's rate in the current month. Every entry of month N, income, expense and both sides of a transfer, converts from its amount in its account's currency at r_(N-1). An entry on a reporting currency account is already in the reporting currency and needs no conversion. Every balance at the end of month N converts at r_N. Entries never revalue, and only the closing balance takes up the month's rate change.
+02. **income and expense lines** convert each entry at r_(N-1), and round each converted entry to the reporting currency's decimal places before summing. Both entries of an income or expense transaction are in one currency, so they convert to the same amount and still balance. This settles 02.OD.02 of the **test cases**.
+03. **a transfer between currencies is booked at r_(N-1).** Each side converts at r_(N-1) of its own currency, and a side in the reporting currency keeps its own amount. The ledger keeps both stored amounts, per 02.FS.08, and their ratio is the rate the user actually dealt at. When that rate differs from r_(N-1), the two booked sides do not cancel, and the difference is the transfer rate difference of 06.
+04. **balance sheet lines** convert each foreign currency balance at r_N.
+05. **the translation gain or loss of one account**, for a month, is computed from these reporting amounts.
 
 ```text
-E_r  = closing balance in the account currency × month-end rate, rounded
-B_r  = E_r of the month before; zero in the month the account opens
-T_r  = sum of the month's entries on the account in reporting amounts, per 02 and 03
-FX   = E_r - B_r - T_r
+E_r  = B_N × r_N, the closing balance in the account currency, rounded
+B_r  = E_r of the month before, B_(N-1) × r_(N-1); zero in the month the account opens
+T_r  = sum of the month's entries × r_(N-1), each rounded, per 02 and 03
+FX   = E_r - B_r - T_r, which before rounding is B_N × (r_N - r_(N-1))
 ```
 
-06. **FX is exact by construction.** B_r is the rounded closing value of the month before, and T_r sums rounded entries, so E_r = B_r + T_r + FX to the cent with no residual.
-07. **an account in the reporting currency** has FX of zero, since its reporting amounts equal its own.
-08. **SB.05** is the sum of FX across every foreign currency account in net worth, cash and positions alike. The balance sheet shows the same figure as its forex gain or loss line. The forex breakdown, PG.27 of the **front end pages**, shows each account's B_r, T_r, E_r, rates and FX, and its rows sum to the line.
-09. **never posted.** FX exists only in the statement build and its snapshot, per the response to requirements audit item 01.04.07 in the **release milestones**. The ledger holds no forex entry before or after a build.
-10. **a change of reporting currency** rebuilds every line from the ledger with the new pair's rates. Both the opening value of a regenerated year's first month and every FX figure follow from the same rules.
+Every entry of the month converts at r_(N-1), the rate of the opening balance, so FX is the closing balance revalued, B_N × (r_N - r_(N-1)), plus the rounding of each converted entry. An account that opens during the month is revalued the same way.
+
+06. **the transfer rate difference of one transfer** between currencies is the booked value received less the booked value sent. A payment source of a split on an account in another currency than the split's cost center is such a transfer.
+
+```text
+R_in  = amount received × r_(N-1) of the receiving currency, rounded
+R_out = amount sent × r_(N-1) of the sending currency, rounded
+XD    = R_in - R_out
+```
+
+07. **why XD is needed.** The booked sides of a transfer change net worth by R_in - R_out, and no income or expense entry holds that change. Without XD the closing net worth would differ from opening net worth plus net income by the sum of XD, and CK.03 would fail. With XD inside SB.05, the identity holds: the change in net worth is the income and expense entries, plus the sum of FX, plus the sum of XD, plus NM.02 and NM.03.
+08. **XD is a forex result, not a transfer result.** The transfer entries still add nothing to net income, per AR.09. XD measures what the user gained or lost by dealing at a rate other than r_(N-1), and a transfer whose two sides share a currency has none.
+09. **both are exact by construction.** B_r is the rounded closing value of the month before, and T_r sums rounded entries, so E_r = B_r + T_r + FX to the cent with no residual. R_in and R_out are the same rounded amounts T_r sums for the two accounts, so the sum of XD closes the identity of 07 to the cent.
+10. **an account in the reporting currency** has FX of zero, since its reporting amounts equal its own. A transfer between two accounts in the reporting currency has XD of zero.
+11. **SB.05** is the sum of FX across every foreign currency account in net worth, cash and positions alike, plus the sum of XD across every transfer between currencies in the month. The balance sheet shows the same figure as its forex gain or loss line. The forex breakdown, PG.27 of the **front end pages**, shows each account's B_r, T_r, E_r, rates and FX, then each transfer's R_in, R_out, actual rate and XD, and its rows sum to the line.
+12. **never posted.** FX and XD exist only in the statement build and its snapshot, per the response to requirements audit item 01.04.07 in the **release milestones**. The ledger holds no forex entry before or after a build.
+13. **the current month** converts its entries and transfers at r_(N-1), fixed before the month began, so its income statement lines and XD never move. Only its balances and FX follow today's rate until the month closes.
+14. **a change of reporting currency** rebuilds every line from the ledger with the new pair's rates. Both the opening value of a regenerated year's first month and every FX figure follow from the same rules.
 
 ## Presentation view
 
 The presentation view is what the statement page and the CSV export show. A build assembles it from the detail and summary lines of one snapshot version, or of each month's current version for a year view, together with the category model and the account types. The API returns the view rows with signed amounts, and the page and the CSV apply PR.01.
 
-| id    | row field  | value                                                    |
-| ----- | ---------- | -------------------------------------------------------- |
-| PV.01 | line key   | the key of a data model line, or of a view line          |
-| PV.02 | label      | the current name of the item, or the line's name here    |
-| PV.03 | level      | the depth of the row in the layout                       |
-| PV.04 | parent key | the key of the row it sits under in the layout           |
-| PV.05 | row kind   | detail, total, derived or view                           |
-| PV.06 | values     | one signed amount per column of the view                 |
+| id    | row field  | value                                                 |
+| ----- | ---------- | ----------------------------------------------------- |
+| PV.01 | line key   | the key of a data model line, or of a view line       |
+| PV.02 | label      | the current name of the item, or the line's name here |
+| PV.03 | level      | the depth of the row in the layout                    |
+| PV.04 | parent key | the key of the row it sits under in the layout        |
+| PV.05 | row kind   | detail, total, derived or view                        |
+| PV.06 | values     | one signed amount per column of the view              |
 
 01. **PV.07 layout.** Rows follow the layout trees of [Income statement layout](#income-statement-layout) and [Balance sheet layout](#balance-sheet-layout). Detail rows sit under their category, by the category's section, or under their subsection, by the account's type, in the order note 05 of [Income statement sections](#income-statement-sections) and [Account detail](#account-detail) set.
 02. **PV.08 one line, more than one row.** A data model line can show in both statements. SB.05 is the income statement's forex gain or loss and the balance sheet's forex gain or loss row.
@@ -563,6 +578,7 @@ Each line of the data model and each row of the view carries a stable key, so a 
 | LK.07 | subsection total    | `bs.subsection.<account type>`            |
 | LK.08 | transfer route      | `bs.ct03.<sending id>.<receiving id>`     |
 | LK.09 | forex of an account | `bs.fx.<account id>`                      |
+| LK.10 | rate difference     | `bs.xd.<transaction id>`                  |
 
 01. the ids are the database ids of the user's own records, so a renamed category keeps its key.
 02. the detail and summary line tables of the [Statement data model](#statement-data-model) hold each line's other columns. The [Presentation view](#presentation-view) adds the label, level and parent of each row.
@@ -573,21 +589,22 @@ Every statement build runs these checks. A failed check fails the build with its
 
 | id    | check                 | pass condition                                      |
 | ----- | --------------------- | --------------------------------------------------- |
-| CK.01 | rates present         | a rate for every currency, entry date and month end |
+| CK.01 | rates present         | every currency's rate at both month ends            |
 | CK.02 | roll-ups              | every total equals the sum of the lines beneath it  |
 | CK.03 | book identity         | NM.06 equals NW.01, to the cent                     |
 | CK.04 | forex identity        | each account's E_r = B_r + T_r + FX, to the cent    |
 | CK.05 | type coverage         | every account in net worth has a type               |
-| CK.06 | clearing at month end | each cost center balance listed when non-zero       |
+| CK.06 | clearing at month end | every cost center at 0.00 at the month end          |
 | CK.07 | drill down            | each detail line equals the sum of its transactions |
+| CK.08 | transfer rate         | each XD = R_in - R_out, to the cent                 |
 
-01. **CK.01** names the missing pair and date in its message.
+01. **CK.01** names the missing pair and month in its message.
 02. **CK.05** holds by constraint once the data model makes the type required. The check guards a load that bypasses it.
-03. **CK.06** never fails. It adds a warning naming each cost center with a non-zero month-end balance, the signal of an unfinished split under AR.07.
+03. **CK.06** names each cost center that is not at 0.00 and its balance. Since no split crosses a month boundary, per AR.07 item 05, a non-zero cost center is a recording error to fix before the month builds. With every cost center at 0.00, leaving TY.03 out of NW.04 keeps every roll-up exact.
 
 ## Worked examples
 
-Each example states its inputs, computes every figure from them, and passes the checks above. The amounts are illustrative. Rates are USD to SGD: 1.34000 on 2026-05-31, 1.34500 on 2026-06-15 and 1.35000 on 2026-06-30. The reporting currency is SGD.
+Each example states its inputs, computes every figure from them, and passes the checks above. The amounts are illustrative. Rates are USD to SGD month-end rates: 1.34000 for May, on 2026-05-31, and 1.35000 for June, on 2026-06-30. June entries convert at the May rate, r_(N-1), and June balances at the June rate, r_N. The reporting currency is SGD.
 
 #### SX.01 forex for June
 
@@ -596,13 +613,13 @@ Three USD accounts in net worth. The USD bank account repeats 02.FS.06 of the **
 | id    | account            | B, USD    | entries, USD | E, USD    |
 | ----- | ------------------ | --------- | ------------ | --------- |
 | FX.01 | USD bank account   | 1,000.00  | -100.00      | 900.00    |
-| FX.02 | brokerage cash     | -200.00   | 0.00         | -200.00   |
+| FX.02 | margin cash        | -200.00   | 0.00         | -200.00   |
 | FX.03 | brokerage position | 19,750.00 | +250.00      | 20,000.00 |
 
-01. **FX.01** a software expense of USD 100.00 on 2026-06-15. B_r is 1,000.00 × 1.34000 = 1,340.00. T_r is -100.00 × 1.34500 = -134.50. E_r is 900.00 × 1.35000 = 1,215.00. FX is 1,215.00 - 1,340.00 + 134.50 = 9.50.
+01. **FX.01** a software expense of USD 100.00 on 2026-06-15, converted at the May rate. B_r is 1,000.00 × 1.34000 = 1,340.00. T_r is -100.00 × 1.34000 = -134.00. E_r is 900.00 × 1.35000 = 1,215.00. FX is 1,215.00 - 1,340.00 + 134.00 = 9.00, which equals 900.00 × 0.01, the closing balance revalued.
 02. **FX.02** B_r is -268.00, T_r is 0.00, E_r is -270.00, and FX is -2.00. A negative balance loses as the dollar rises.
-03. **FX.03** an unrealised gain of USD 250.00 posted on 2026-06-30 under AR.13. B_r is 26,465.00. T_r is 250.00 × 1.35000 = 337.50. E_r is 27,000.00. FX is 27,000.00 - 26,465.00 - 337.50 = 197.50, which equals 19,750.00 × 0.01.
-04. SB.05 is 9.50 - 2.00 + 197.50 = 205.00.
+03. **FX.03** an unrealised gain of USD 250.00 posted on 2026-06-30 under AR.13. B_r is 26,465.00. T_r is 250.00 × 1.34000 = 335.00. E_r is 27,000.00. FX is 27,000.00 - 26,465.00 - 335.00 = 200.00, which equals 20,000.00 × 0.01.
+04. SB.05 is 9.00 - 2.00 + 200.00 = 207.00.
 
 #### SX.02 income statement for June
 
@@ -615,47 +632,46 @@ The signed entries of June, in SGD. The salary of 6,000.00 lands 4,800.00 in the
 | IE.03 | personal      | other income            | rebates                 | +20.00    |
 | IE.04 | personal      | taxes                   | income tax              | -500.00   |
 | IE.05 | investment    | cash profit and loss    | dividends               | +40.00    |
-| IE.06 | investment    | mark to market liquid   | unrealised gain or loss | +337.50   |
+| IE.06 | investment    | mark to market liquid   | unrealised gain or loss | +335.00   |
 | IE.07 | rental        | rent                    | rent                    | -1,800.00 |
 | IE.08 | cole          | cole                    | food                    | -400.00   |
 | IE.09 | cole          | cole                    | transport               | -60.00    |
 | IE.10 | cole          | insurance               | health                  | -120.00   |
 | IE.11 | discretionary | discretionary           | drinks                  | -45.50    |
-| IE.12 | discretionary | discretionary           | software                | -134.50   |
+| IE.12 | discretionary | discretionary           | software                | -134.00   |
 
 01. **retirement contributions**: RC.01 is 720.00 + 240.00 + 240.00 = 1,200.00. RC.02 is 900.00. PI.01 is 2,100.00.
 02. **personal income**: PI.06 gross salary is 6,000.00. PI.05 is 6,000.00 - 1,200.00 = 4,800.00. PI.02 total cash income is 4,800.00 + 20.00 = 4,820.00. PI.03 taxes paid is -500.00. PI.04 is 2,100.00 + 4,820.00 - 500.00 = 6,420.00, which equals the IS.01 section total 6,000.00 + 900.00 + 20.00 - 500.00.
-03. **total expenses**: TE.02 is -1,800.00. TE.03 is -400.00 - 60.00 - 120.00 = -580.00. TE.04 is -45.50 - 134.50 = -180.00. TE.01 is -2,560.00. June closes the second quarter, so TE.05 is a quarter figure. With April and May discretionary of 200.00 and 220.00, the quarter's discretionary is 180.00 + 200.00 + 220.00 = 600.00. With a year COLE of 6,960.00, TE.05 is 600.00 / (0.25 × 6,960.00) = 600.00 / 1,740.00 = 0.34.
-04. **summary**: SB.03 gross savings is 6,420.00 - 2,560.00 = 3,860.00. SB.02 cash savings is 3,860.00 - 2,100.00 = 1,760.00. SB.04 is 40.00 + 337.50 = 377.50. SB.05 is 205.00, from SX.01. SB.01 net income is 3,860.00 + 377.50 + 205.00 = 4,442.50.
-05. **cross-check**: the income entries sum to 7,297.50 and the expense entries to -3,060.00. Their sum, 4,237.50, plus SB.05 is 4,442.50, the same net income.
-06. **presentation**: the rendered page shows taxes paid 500.00, rental 1,800.00, COLE ex rent 580.00, discretionary 180.00 and total expenses 2,560.00, per PR.01, while net income reads 4,442.50.
+03. **total expenses**: TE.02 is -1,800.00. TE.03 is -400.00 - 60.00 - 120.00 = -580.00. TE.04 is -45.50 - 134.00 = -179.50. TE.01 is -2,559.50. June closes the second quarter, so TE.05 is a quarter figure. With April and May discretionary of 200.00 and 220.00, the quarter's discretionary is 179.50 + 200.00 + 220.00 = 599.50. With a year COLE of 6,960.00, TE.05 is 599.50 / (0.25 × 6,960.00) = 599.50 / 1,740.00 = 0.34.
+04. **summary**: SB.03 gross savings is 6,420.00 - 2,559.50 = 3,860.50. SB.02 cash savings is 3,860.50 - 2,100.00 = 1,760.50. SB.04 is 40.00 + 335.00 = 375.00. SB.05 is 207.00, from SX.01. SB.01 net income is 3,860.50 + 375.00 + 207.00 = 4,442.50.
+05. **cross-check**: the income entries sum to 7,295.00 and the expense entries to -3,059.50. Their sum, 4,235.50, plus SB.05 is 4,442.50, the same net income.
+06. **presentation**: the rendered page shows taxes paid 500.00, rental 1,800.00, COLE ex rent 580.00, discretionary 179.50 and total expenses 2,559.50, per PR.01, while net income reads 4,442.50.
 
 #### SX.03 balance sheet at 2026-06-30
 
 The month-end balances of every account in net worth, with the USD accounts from SX.01.
 
-| id    | account            | type            | balance       | SGD       |
-| ----- | ------------------ | --------------- | ------------- | --------- |
-| BE.01 | cash wallet        | wallet cash     | 150.00        | 150.00    |
-| BE.02 | main bank account  | bank account    | 4,200.00      | 4,200.00  |
-| BE.03 | USD bank account   | bank account    | USD 900.00    | 1,215.00  |
-| BE.04 | transit card       | wallet cash     | 30.00         | 30.00     |
-| BE.05 | cost center        | clearing        | 0.00          | 0.00      |
-| BE.06 | main credit card   | credit card     | -1,350.00     | -1,350.00 |
-| BE.07 | utility bill       | other credit    | -120.00       | -120.00   |
-| BE.08 | rental deposit     | other credit    | 2,000.00      | 2,000.00  |
-| BE.09 | friends receivable | other credit    | 80.00         | 80.00     |
-| BE.10 | brokerage cash     | savings account | USD -200.00   | -270.00   |
-| BE.11 | brokerage position | investment      | USD 20,000.00 | 27,000.00 |
-| BE.12 | retirement fund A  | retirement      | 30,000.00     | 30,000.00 |
-| BE.13 | retirement fund B  | retirement      | 12,000.00     | 12,000.00 |
-| BE.14 | retirement fund C  | retirement      | 8,000.00      | 8,000.00  |
+| id    | account            | type          | balance       | SGD       |
+| ----- | ------------------ | ------------- | ------------- | --------- |
+| BE.01 | cash wallet        | wallet cash   | 150.00        | 150.00    |
+| BE.02 | main bank account  | bank account  | 4,200.00      | 4,200.00  |
+| BE.03 | USD bank account   | bank account  | USD 900.00    | 1,215.00  |
+| BE.04 | transit card       | wallet cash   | 30.00         | 30.00     |
+| BE.05 | main credit card   | credit card   | -1,350.00     | -1,350.00 |
+| BE.06 | utility bill       | other credit  | -120.00       | -120.00   |
+| BE.07 | rental deposit     | other credit  | 2,000.00      | 2,000.00  |
+| BE.08 | friends receivable | other credit  | 80.00         | 80.00     |
+| BE.09 | margin cash        | margin credit | USD -200.00   | -270.00   |
+| BE.10 | brokerage position | investment    | USD 20,000.00 | 27,000.00 |
+| BE.11 | retirement fund A  | retirement    | 30,000.00     | 30,000.00 |
+| BE.12 | retirement fund B  | retirement    | 12,000.00     | 12,000.00 |
+| BE.13 | retirement fund C  | retirement    | 8,000.00      | 8,000.00  |
 
-01. **NW.04** cash and bank accounts is 150.00 + 4,200.00 + 1,215.00 + 30.00 + 0.00 = 5,595.00.
-02. **NW.06** credit holds BE.06 to BE.10. BE.10 is below zero, so it routes to credit under other credit, per TY.03. Credit cards is -1,350.00, other credit is -120.00 + 2,000.00 + 80.00 - 270.00 = 1,690.00, and NW.06 is 340.00.
+01. **NW.04** cash and bank accounts is 150.00 + 4,200.00 + 1,215.00 + 30.00 = 5,595.00. The cost center is at 0.00 and has no line.
+02. **NW.06** credit holds BE.05 to BE.09. Credit cards is -1,350.00, other credit is -120.00 + 2,000.00 + 80.00 = 1,960.00, margin credit is -270.00, and NW.06 is 340.00.
 03. **NW.05** liquid investments is 27,000.00. **NW.03** liquid net worth is 5,595.00 + 27,000.00 + 340.00 = 32,935.00.
 04. **NW.02** illiquid and retirement is 50,000.00. **NW.01** net worth is 82,935.00.
-05. had brokerage cash closed at USD 150.00, it would sit in cash and bank accounts under savings accounts at 202.50, and credit would lose its -270.00 line.
+05. had margin cash closed at USD 150.00, it would still sit in credit under margin credit, at 202.50, and NW.06 would be 812.50.
 
 #### SX.04 net worth movement for June
 
@@ -669,26 +685,39 @@ May's balance sheet closed at a net worth of 78,592.50. In June the user also se
 
 01. RC.04 from SX.02: fund A 720.00 + 540.00 = 1,260.00, fund B 240.00 + 180.00 = 420.00, fund C 420.00. The three sum to RC.03, 2,100.00.
 02. the June contributions are income inflows, so CT.01 retirement contributions is 0.00. A month that books the employee share as transfers into the funds shows it in both RC.01 and CT.01.
-03. no buy, sell or transfer between currencies took place, so CT.04 net cash transfers is 0.00. The unrealised gain on the position is income, and it shows in SB.04.
+03. no buy, sell or transfer between currencies took place, so CT.04 net cash transfers is 0.00 and June has no XD. The unrealised gain on the position is income, and it shows in SB.04.
+
+#### SX.06 transfer rate difference
+
+A separate month from SX.01 to SX.05. On 2026-06-15 the user sends SGD 1,330.00 from the main bank account to the USD bank account, which receives USD 1,000.00, an actual rate of 1.33000. The USD bank account opened June at USD 0.00, and no other entry touches either account. r_(N-1) is 1.34000 and r_N is 1.35000.
+
+01. **booked sides**: R_out is 1,330.00, the SGD side at its own amount. R_in is 1,000.00 × 1.34000 = 1,340.00.
+02. **XD** is 1,340.00 - 1,330.00 = 10.00. The user bought dollars below the May month-end rate, so the transfer leaves them 10.00 better off in SGD.
+03. **FX** of the USD account: B_r is 0.00, T_r is 1,340.00 and E_r is 1,000.00 × 1.35000 = 1,350.00, so FX is 10.00, the closing balance of USD 1,000.00 revalued by 0.01.
+04. **identity**: net worth rises by 1,350.00 - 1,330.00 = 20.00. Net income is 0.00 of entries plus SB.05 of 10.00 + 10.00 = 20.00, so NM.06 equals NW.01 and CK.03 passes. Without XD, net income would be 10.00 and CK.03 would fail by 10.00.
 
 ## Decisions settled and handoffs
 
-This doc settles three open inputs.
+This doc settles these open inputs.
 
-01. **02.OD.10** and **WI.06** liability presentation: liabilities keep their signed negative values in the API, the snapshot, the screen and the CSV, per note 03 of [Net worth and its sections](#net-worth-and-its-sections). The case catalogue removes 02.OD.10 and keeps the assumption of 02.FS.04 and 02.UI.24 as the expected value.
-02. **WI.07** account type grouping: the table in [Account types](#account-types) maps every type to one section, with the brokerage cash sign rule of TY.03.
-03. the sections, categories and derived lines of both statements, per this doc.
+01. **02.OD.10** liability presentation: liabilities keep their signed negative values in the API, the snapshot, the screen and the CSV, per note 03 of [Net worth and its sections](#net-worth-and-its-sections). The case catalogue removes 02.OD.10 and keeps the assumption of 02.FS.04 and 02.UI.24 as the expected value.
+02. **account type grouping**: the table in [Account types](#account-types) maps every type to one section at any balance, with margin cash in credit as TY.06.
+03. **02.OD.02** rate basis: every entry converts at the month-end rate of the month before, and every balance at the month-end rate of its month, per [Currency translation and forex](#currency-translation-and-forex). The case catalogue removes 02.OD.02 and updates 02.FS.06.
+04. **02.OD.01** rounding: every converted amount rounds half up to the decimal places of its target currency. The case catalogue removes 02.OD.01 and keeps the round half up value of 02.LED.04.
+05. **02.OD.09** missing dates: a weekend or holiday takes the last published rate before it. The case catalogue removes 02.OD.09 and keeps the expected value of 02.FX.09.
+06. the sections, categories and derived lines of both statements, per this doc.
 
 These decisions rest on other topics. Each topic confirms its part before this topic closes.
 
-| id    | topic                       | handoff                                                   |
-| ----- | --------------------------- | --------------------------------------------------------- |
-| HO.01 | 04.05 data model            | category section, account type, detail and summary lines  |
-| HO.02 | 04.06 accounts              | loss categories under AR.13, balance before a first point |
-| HO.03 | 04.08 multi currency, forex | rate rule of 02.OD.02, rounding of 02.OD.01               |
-| HO.04 | 04.03 front end pages       | summary blocks first, year view columns, rate row         |
-| HO.05 | test cases                  | update 02.FS.01, 02.FS.04, 02.UI.23, 02.UI.24, remove OD  |
+| id    | topic                       | handoff                                                  |
+| ----- | --------------------------- | -------------------------------------------------------- |
+| HO.01 | 04.05 data model            | category section, account type, detail and summary lines |
+| HO.02 | 04.06 accounts              | loss categories under AR.13                              |
+| HO.03 | 04.08 multi currency, forex | rate source and storage, month-end basis and XD          |
+| HO.04 | 04.03 front end pages       | summary blocks first, year view columns, rate row        |
+| HO.05 | test cases                  | update 02.FS.01, 02.FS.04, 02.UI.23, 02.UI.24, remove OD |
 
 01. **HO.01** the category carries a required section of IS.01 to IS.05. The account carries a required type of TY.01 to TY.08 and an in-net-worth flag. The snapshot version holds the detail and summary line tables of the [Statement data model](#statement-data-model).
-02. **HO.04** PG.23, PG.25 and PG.26 of the **front end pages** list net worth and net income after the detail. This doc puts the summary blocks first, and adds the monthly average, the opening December column and the rate row.
-03. **HO.05** 02.FS.01 holds categories with no section. Its ledger gains sections so its net income also checks SB.01.
+02. **HO.03** the multi currency and forex topic confirms the rate basis, entries at the month-end rate of the month before and balances at their own month end, and the transfer rate difference XD, per notes 01, 03 and 06 of [Currency translation and forex](#currency-translation-and-forex).
+03. **HO.04** PG.23, PG.25 and PG.26 of the **front end pages** list net worth and net income after the detail. This doc puts the summary blocks first, and adds the monthly average, the opening December column and the rate row. The forex breakdown, PG.27, adds one row per transfer between currencies.
+04. **HO.05** 02.FS.01 holds categories with no section. Its ledger gains sections so its net income also checks SB.01.

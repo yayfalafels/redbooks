@@ -133,7 +133,7 @@ Every database the tests use holds the seed. The seed load reads the **homebudge
 
 **02.TD.01 users** defined in `data/users.json`, the seed holds two users with distinct data. User `01` holds the account `02` snapshot, in SGD reporting with USD accounts. User `02` holds a small ledger of a few accounts and transactions with hypothetical names. Cases name them `alice` and `bob`.
 
-**02.TD.02 closed vocabularies** the seed holds at least one row of every account type, every transaction kind of expense, income and transfer, every transfer kind of same-currency and between-currency, every rate source of fetched and user, and every balance sheet group.
+**02.TD.02 closed vocabularies** the seed holds at least one row of every account type, every transaction kind of expense, income, transfer and split, a tagged pooled account, every transfer kind of same-currency and between-currency, every rate source of fetched and user, and every balance sheet group.
 
 **02.TD.03 rates** the seed holds stored USD to SGD rates for every date the seed needs, including every month end in the seed period. The stub rate API serves the same values from `tests/fixtures/rates/`, built from the responses the exchange rate API probe saved.
 
@@ -148,7 +148,8 @@ Every database the tests use holds the seed. The seed load reads the **homebudge
 
 01. each account's reconciled balance point comes from the snapshot's Account table, one point per account. Its balance at every month end and on the snapshot date is that point rolled through its AccountTrans rows, per AR.11, and the **homebudget wrapper**'s `get_account_balance` cross-checks each figure.
 02. the snapshot holds both amounts of each transfer between currencies, such as the three on 2026-06-02, 2026-08-24 and 2026-09-08. The amounts are the source of truth. Rate times USD amount differs from the SGD amount by up to 0.09 at five decimal places, so a test asserts the stored amounts and never recomputes one from the rate.
-03. the category totals and record counts cover rows dated on or before the snapshot date, after the skips the **homebudget data review** sets.
+03. the category totals and record counts cover rows dated on or before the snapshot date, after the skips the **homebudget data review** sets. Category totals hold each account's own currency, so a foreign currency account's expenses compare before any statement conversion.
+04. the seed's splits come from the split builder, which reconstructs a sample of account `02` cost center groups, per the **data migration**, and the second seed user holds a tagged pooled account.
 
 **02.TD.09 synthetic fixtures** unit and service tests use small hand-built ledgers with hard-coded expected values stated in the case itself. These cover rules the snapshot does not exercise, such as rounding boundaries, JPY with zero decimal places, refunds, billing accounts and a reporting currency change. Their account names are hypothetical names at real Singapore institutions.
 

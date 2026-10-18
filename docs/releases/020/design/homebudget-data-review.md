@@ -149,7 +149,7 @@ The **fs account registry**, the `accounts` region of the **financial statements
 | id    | placement                                       | accounts |
 | ----- | ----------------------------------------------- | -------- |
 | M1.01 | registry account, its registry account type     | 29       |
-| M1.02 | cost center, account type clearing, TY.04       | 9        |
+| M1.02 | cost center, account type clearing, TY.03       | 9        |
 | M1.03 | outside the registry and outside the statements | 22       |
 
 01. **M1.01** wallet cash 6, bank account 5, savings account 4, credit card 3, other credit 3, investment 5 and retirement 3, from the live `accounts` region fetched by the **fetch script**. The **fs category translation** transcribes an earlier copy with 28 rows, and the live workbook governs where the two differ.
@@ -165,21 +165,21 @@ Each account `02` account takes the account type of its account `01` registry pa
 | M2.02 | cash wallet             | SGD | registry pair     | wallet cash     |
 | M2.03 | USD bank account        | USD | registry pair     | bank account    |
 | M2.04 | cost center             | SGD | cost center       | clearing        |
-| M2.05 | brokerage cash          | USD | registry pair     | savings account |
+| M2.05 | brokerage cash          | USD | TY.06             | margin credit   |
 | M2.06 | main credit card        | SGD | registry pair     | credit card     |
 | M2.07 | household share account | SGD | registry pair     | other credit    |
 | M2.08 | transit stored-value    | SGD | registry pair     | wallet cash     |
 | M2.09 | coffee stored-value     | SGD | TY.01             | wallet cash     |
-| M2.10 | utility bill account    | SGD | TY.06             | other credit    |
-| M2.11 | previous rental deposit | SGD | TY.06             | other credit    |
-| M2.12 | utility deposit         | SGD | TY.06             | other credit    |
-| M2.13 | current rental deposit  | SGD | TY.06             | other credit    |
+| M2.10 | utility bill account    | SGD | TY.05             | other credit    |
+| M2.11 | previous rental deposit | SGD | TY.05             | other credit    |
+| M2.12 | utility deposit         | SGD | TY.05             | other credit    |
+| M2.13 | current rental deposit  | SGD | TY.05             | other credit    |
 | M2.14 | brokerage position      | USD | registry pair     | investment      |
-| M2.15 | phone bill account      | SGD | TY.06             | other credit    |
-| M2.16 | friends receivable      | SGD | TY.06             | other credit    |
+| M2.15 | phone bill account      | SGD | TY.05             | other credit    |
+| M2.16 | friends receivable      | SGD | TY.05             | other credit    |
 
 01. the HomeBudget type of each account is kept as a source attribute. A Credit account's balance can be positive or negative, and the account type alone sets its placement, per DQ.09.
-02. **M2.05** a savings account sits on the balance sheet by its sign, per TY.03 of the **financial statements design**.
+02. **M2.05** the cash of a margin brokerage account is margin credit and stays in credit at any balance, per TY.06 of the **financial statements design**. Its registry pair is a savings account, which the legacy statements placed by its sign.
 
 ### Accounts held in both
 
@@ -211,7 +211,7 @@ The one open issue of this review is the account `02` mapping onto the canonical
 
 01. **finer lines than the canonical form.** The SC table keeps each account `02` subcategory as its own line and rolls several into one `gl_code`, such as dating and social into socializing. The **reference statements** show only the `gl_code` lines.
 02. **items with no canonical line.** `cole/services` and `cole/loss` mirror no `gl_code`, and the three deposits M2.11 to M2.13 have no line of their own in the **reference statements**.
-03. **stored value and brokerage cash.** The registry and the **financial statements design** place stored-value cards in wallet cash and brokerage cash by its sign, while the **reference statements** list both under misc credit.
+03. **stored value and brokerage cash.** The registry and the **financial statements design** place stored-value cards in wallet cash. The registry places brokerage cash by its sign, and the **financial statements design** places it in credit as margin credit at any balance. The **reference statements** list both under misc credit.
 
 ## Answers to the homebudget accounts questions
 
@@ -220,7 +220,7 @@ The one open issue of this review is the account `02` mapping onto the canonical
 03. **cost center timing.** The 8 dates are 4 pairs one to three days apart: 2026-05-24 and 05-27, 06-26 and 06-27, 07-12 and 07-15, and 09-12 and 09-13. In each pair the cost center returns to 0.00 by the second date. Each is one split whose funding transfer, itemised expenses or transfers out fall on two dates, and three of them include a transfer out. None is a refund of an expense. The cost center is at 0.00 on 2026-10-17.
 04. **transfers out of the cost center.** To 2026-09-29 the 12 transfers out are 4 reimbursements from other people received in the main bank, 1 utility account refund to the main bank, 4 flatmate shares moved to the household share account, and 3 deposit moves into deposit accounts. The database adds 3 more to 2026-10-17. Each is a transfer under AR.09: a negative entry on the cost center and a positive entry on the receiving account. Each is the part of a split that is not the user's expense, per CE.03 of the **accounting rules**.
 05. **billing and stored-value accounts.** HomeBudget gives the stored-value cards, the bill accounts, the household share account and the friends receivable the Credit type, whose balance can be positive or negative. Their signs already follow AR.01, so no sign changes. Each takes its account type per [Account 02 accounts](#account-02-accounts): wallet cash for the stored-value cards and other credit for the rest.
-06. **deposit accounts.** M2.11, M2.12 and M2.13 carry the Deposit type and take the other credit account type, per TY.06 of the **financial statements design**. M2.11 was forfeited by an expense and closes at 0.00.
+06. **deposit accounts.** M2.11, M2.12 and M2.13 carry the Deposit type and take the other credit account type, per TY.05 of the **financial statements design**. M2.11 was forfeited by an expense and closes at 0.00.
 07. **forex fees.** The three transfers between currencies move money between brokerage cash and the main bank, so the card fee rule of AR.12 item 05 does not apply. The database holds both amounts of each, per DQ.05. In all three the SGD side is a round figure, so the user set the SGD amount: the recipient's on two transfers and the sender's on the third. The rate times the USD amount differs from the SGD amount by 0.01, 0.09 and 0.06, a 5-decimal rounding effect. The amounts stay the source of truth, per AR.12 item 04. The 5 USD expenses on SGD accounts carry no separate fee expense.
 08. **direct inflows.** Inflows other than income are 2 negative expenses, a utility bill credit line and a refunded overpayment, which load as refunds under AR.06. Transfers in carry reimbursements, a deposit refund and the proceeds of a closed investment position. Income has 6 salary records, 1 government rebate and 1 card rebate. The card rebate is income on the main bank plus a same-day transfer of the same amount to the card, per DQ.13.
 

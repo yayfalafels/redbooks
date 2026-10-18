@@ -53,8 +53,9 @@ The seed milestone of the **release milestones** owns this load.
 02. **MR.02 rebuild and reload.** During `0.2.0` development one command rebuilds the schema and reloads the seed into an empty database. Loading the same snapshot twice gives the same database.
 03. **MR.03 accounts.** Each account loads with its account type, per [Account mapping](#account-mapping), and its reconciled balance point from the snapshot.
 04. **MR.04 categories.** Each account `02` category and subcategory loads as a RedBooks category and subcategory, per [Account 02 categories](#account-02-categories). An unmapped account or subcategory fails the load with its name, per 02.SEED.03.
-05. **MR.05 records.** Every expense, income record and transfer loads under the sign translation and the account `02` data quality rules of the **homebudget data review**, with its account `02` match key.
+05. **MR.05 records.** Account `02` holds no tags, and its splits are cost center groups rather than split records. Every expense, income record and transfer loads as a record of its own kind with no tags under the sign translation and the account `02` data quality rules of the **homebudget data review**, with its account `02` match key, except the groups the split builder of MR.14 reconstructs.
 06. **MR.06 statements.** The load generates a statement snapshot for every month it loads.
+07. **MR.14 split builder.** Account `02` uses its cost center only for splits, so each transfer into it, the expenses booked on it and the transfers out that return it to zero form one split group, per DQ.14 of the **homebudget data review** for groups whose records fall on two dates. The split builder reconstructs a sample of these groups as split records: the transfer in becomes a payment source paid from its account, each expense a category line, and each transfer out a payment source received into its account. Each reconstructed split keeps every account entry at its AccountTrans amount, so balances are unchanged, and the seed then holds a split of every shape the samples cover, including one with two payment sources. Account `01` routed every expense through the cost center, so a split group there cannot be told apart from a one-to-one expense, and the migration reconstructs none.
 
 ### Account 01 migration
 
@@ -66,7 +67,7 @@ The homebudget account 01 migrate milestone of the **release milestones** owns t
 04. **MR.10 reset paired points.** Each account held in both accounts resets its reconciled point to its last account `01` point, and the reconcile scope runs from there to the next reconciliation, per DQ.38 and task 12.02.
 05. **MR.11 accounts and categories.** Each account takes its type, per [Account mapping](#account-mapping). Each source subcategory maps to one RedBooks subcategory, per [Account 01 subcategories](#account-01-subcategories), and the mapping report lists any it could not map.
 06. **MR.12 upsert.** Every record matches by its account `01` match key. A matched record is skipped, an unmatched one is added, and identical records on one day load separately. A second run adds nothing.
-07. **MR.13 checks.** Each cost center matches its HomeBudget balance at every month end in the scope. Balances and category totals match the account `01` reference figures. The load generates a statement snapshot for every month it loads.
+07. **MR.13 checks.** The one cost center of each currency matches the sum of the HomeBudget balances of the account `01` cost centers mapped onto it, at every month end in the scope. Balances and category totals match the account `01` reference figures. The load generates a statement snapshot for every month it loads.
 
 ## Account mapping
 
@@ -87,34 +88,35 @@ Each HomeBudget account takes one of the account types TY.01 to TY.08 of the **f
 
 **filling the map.** Each account's row comes from the first of these sources that covers it.
 
-01. **account 01 registry accounts** take the type of their asset subcategory in the legacy `accounts` region, which the **fetch script** reads into the **legacy mapping**.
-02. **account 01 cost centers** take `clearing`. The account `01` accounts outside the registry sit outside net worth, per M1.03 of the **homebudget data review**.
+01. **account 01 registry accounts** take the type of their asset subcategory in the legacy `accounts` region, which the **fetch script** reads into the **legacy mapping**. A registry savings account takes `bank account`. The one exception is the cash of a margin brokerage account, which takes `margin credit`, per TM.06.
+02. **account 01 cost centers** map onto the user's one cost center of their currency, per AR.07 item 06 of the **accounting rules**, as task 12.03. The account `01` accounts outside the registry sit outside net worth, per M1.03 of the **homebudget data review**.
 03. **account 02 accounts paired with account 01** take the type of their pair, per [Accounts held in both](homebudget-data-review.md#accounts-held-in-both) of the review.
 04. **any other account** takes the type its role sets in the table below. A person assigns the role when adding the account to the map.
 
-| id    | role                                    | account type    |
-| ----- | --------------------------------------- | --------------- |
-| TM.01 | cost center                             | clearing        |
-| TM.02 | bank account                            | bank account    |
-| TM.03 | physical cash                           | wallet cash     |
-| TM.04 | stored-value card or e-wallet           | wallet cash     |
-| TM.05 | cash account of an investment           | savings account |
-| TM.06 | investment position                     | investment      |
-| TM.07 | credit card                             | credit card     |
-| TM.08 | loan                                    | other credit    |
-| TM.09 | bill account                            | other credit    |
-| TM.10 | household share account                 | other credit    |
-| TM.11 | tax payable                             | other credit    |
-| TM.12 | security deposit                        | other credit    |
-| TM.13 | receivable from a person                | other credit    |
-| TM.14 | retirement fund                         | retirement      |
-| TM.15 | retirement brokerage position           | retirement      |
-| TM.16 | counterparty the user does not own      | none            |
+| id    | role                               | account type  |
+| ----- | ---------------------------------- | ------------- |
+| TM.01 | cost center                        | clearing      |
+| TM.02 | bank account                       | bank account  |
+| TM.03 | physical cash                      | wallet cash   |
+| TM.04 | stored-value card or e-wallet      | wallet cash   |
+| TM.05 | cash account of an investment      | bank account  |
+| TM.06 | cash of a margin brokerage account | margin credit |
+| TM.07 | investment position                | investment    |
+| TM.08 | credit card                        | credit card   |
+| TM.09 | loan                               | other credit  |
+| TM.10 | bill account                       | other credit  |
+| TM.11 | household share account            | other credit  |
+| TM.12 | tax payable                        | other credit  |
+| TM.13 | security deposit                   | other credit  |
+| TM.14 | receivable from a person           | other credit  |
+| TM.15 | retirement fund                    | retirement    |
+| TM.16 | retirement brokerage position      | retirement    |
+| TM.17 | counterparty the user does not own | none          |
 
-In account `02`, M2.01 and M2.03 are bank accounts, M2.02, M2.08 and M2.09 wallet cash, M2.04 clearing, M2.05 a savings account, M2.06 a credit card, M2.07, M2.10 to M2.13, M2.15 and M2.16 other credit, and M2.14 an investment.
+In account `02`, M2.01 and M2.03 are bank accounts, M2.02, M2.08 and M2.09 wallet cash, M2.04 clearing, M2.05 margin credit, M2.06 a credit card, M2.07, M2.10 to M2.13, M2.15 and M2.16 other credit, and M2.14 an investment.
 
-01. **stored value** loads as wallet cash, and **brokerage cash** as a savings account placed by its sign, as the legacy `accounts` region files them. The legacy published statements list both under misc credit, so a migrated balance sheet places them differently from the legacy one.
-02. **the cost center** was off the legacy balance sheet. It loads as `clearing` and shows on the RedBooks balance sheet while a split spans a month end.
+01. **stored value** loads as wallet cash, as the legacy `accounts` region files it. **margin cash** loads as margin credit and stays in credit at any balance. The legacy `accounts` region filed it as a savings account placed by its sign, and the legacy published statements list both under misc credit, so a migrated balance sheet places them differently from the legacy one.
+02. **the cost center** was off the legacy balance sheet. It loads as `clearing`, the one cost center of its currency, which holds 0.00 at every month end and has no line on the RedBooks balance sheet.
 
 ## Category mapping
 
@@ -163,7 +165,7 @@ The account `01` subcategories map as the `cat_map` and `fin_expense_cat_map` re
 | AM.18 | Personal Discretionary  | Donations                          | discretionary_misc   | SC.35      |
 | AM.19 | Personal Discretionary  | Jewelry and Accessories            | discretionary_misc   | SC.42      |
 | AM.20 | Professional Services   | Post                               | post                 | SC.08      |
-| AM.21 | Professional Services   | the other five                     | discretionary_misc   | SC.34      |
+| AM.21 | Professional Services   | the other four                     | discretionary_misc   | SC.34      |
 | AM.22 | Project                 | academic program projects          | higher_education     | SC.29      |
 | AM.23 | Project                 | trip projects                      | travel               | SC.28      |
 | AM.24 | Project                 | carbon offset                      | discretionary_misc   | SC.42      |
@@ -180,7 +182,7 @@ The account `01` subcategories map as the `cat_map` and `fin_expense_cat_map` re
 | AM.35 | Taxes and Fines         | unauthorized transaction           | discretionary_misc   | SC.42      |
 | AM.36 | Transport               | MRT                                | transport            | SC.03      |
 | AM.37 | Transport               | every Taxi subcategory             | discretionary_misc   | SC.32      |
-| AM.38 | Transport               | Bike                               | discretionary_misc   | SC.33      |
+| AM.38 | Transport               | Bike                               | discretionary_misc   | SC.03      |
 | AM.39 | Travel                  | Lodging                            | travel               | SC.28      |
 | AM.40 | Utilities               | Electricity                        | electricity          | SC.13      |
 | AM.41 | Utilities               | Gas, Water, PUB other              | pub_water_gas        | SC.10-12   |
@@ -188,10 +190,62 @@ The account `01` subcategories map as the `cat_map` and `fin_expense_cat_map` re
 | AM.43 | Utilities               | Mobile                             | mobile               | SC.06      |
 | AM.44 | Balancing, Reimbursable | all                                | discretionary_misc   | task 12.01 |
 | AM.45 | Real Estate, Securities | all                                | none                 | task 12.01 |
+| AM.46 | Professional Services   | Currency conversion                | discretionary_misc   | SC.33      |
+
+The same mapping, with each RedBooks line named by its category and subcategory. AX.nn repeats AM.nn, and the AM notes apply to it.
+
+| id    | account 01 category     | account 01 subcategories  | category      | subcategory           | RedBooks |
+| ----- | ----------------------- | ------------------------- | ------------- | --------------------- | -------- |
+| AX.01 | Food (Basic)            | all four                  | cole          | food                  | SC.02    |
+| AX.02 | Health and Wellness     | Grooming, Haircut         | cole          | grooming              | SC.05    |
+| AX.03 | Health and Wellness     | Medical expenses/supplies | cole          | healthcare            | SC.04    |
+| AX.04 | Health and Wellness     | Health insurance          | insurance     | health                | SC.18    |
+| AX.05 | Health and Wellness     | Fitness                   | discretionary | fitness               | SC.19    |
+| AX.06 | Health and Wellness     | Massage                   | discretionary | massage               | SC.41    |
+| AX.07 | Health and Wellness     | Medical - sexual health   | discretionary | other                 | SC.42    |
+| AX.08 | Household               | Maintenance               | cole          | maintenance           | SC.15    |
+| AX.09 | Household               | Sundries                  | cole          | sundries              | SC.14    |
+| AX.10 | Household               | Pet and Plants            | discretionary | pets and plants       | SC.36    |
+| AX.11 | Household               | Cleaning service          | discretionary | cleaning              | SC.38    |
+| AX.12 | Household               | Durable goods, Furniture  | discretionary | durables              | SC.37    |
+| AX.13 | Personal Discretionary  | Clothing, Shoes           | cole          | clothing              | SC.07    |
+| AX.14 | Personal Discretionary  | Books                     | discretionary | books                 | SC.27    |
+| AX.15 | Personal Discretionary  | Education                 | discretionary | education             | SC.29    |
+| AX.16 | Personal Discretionary  | IT                        | discretionary | it hardware           | SC.26    |
+| AX.17 | Personal Discretionary  | Cloud data                | discretionary | software              | SC.24    |
+| AX.18 | Personal Discretionary  | Donations                 | discretionary | donations             | SC.35    |
+| AX.19 | Personal Discretionary  | Jewelry and Accessories   | discretionary | other                 | SC.42    |
+| AX.20 | Professional Services   | Post                      | cole          | post                  | SC.08    |
+| AX.21 | Professional Services   | the other four            | discretionary | professional services | SC.34    |
+| AX.22 | Project                 | academic program projects | discretionary | education             | SC.29    |
+| AX.23 | Project                 | trip projects             | discretionary | travel                | SC.28    |
+| AX.24 | Project                 | carbon offset             | discretionary | other                 | SC.42    |
+| AX.25 | Project                 | other projects            | projects      | one per project       | SC.40    |
+| AX.26 | Rent                    | Rent                      | rent          | rent                  | SC.01    |
+| AX.27 | Social & Entertainment  | Alcohol                   | discretionary | alcohol               | SC.21    |
+| AX.28 | Social & Entertainment  | Drinks - nonalcoholic     | discretionary | drinks                | SC.20    |
+| AX.29 | Social & Entertainment  | Dating, Date night dinner | discretionary | dating                | SC.23    |
+| AX.30 | Social & Entertainment  | Friends, Events, others   | discretionary | social                | SC.22    |
+| AX.31 | Social & Entertainment  | Family, Gifts             | discretionary | gifts                 | SC.39    |
+| AX.32 | Taxes and Fines         | Taxes - income            | taxes         | income tax            | PS.08    |
+| AX.33 | Taxes and Fines         | Taxes - other, subsidy    | taxes         | other tax             | PS.09    |
+| AX.34 | Taxes and Fines         | Fines                     | discretionary | fines                 | SC.31    |
+| AX.35 | Taxes and Fines         | unauthorized transaction  | discretionary | other                 | SC.42    |
+| AX.36 | Transport               | MRT                       | cole          | transport             | SC.03    |
+| AX.37 | Transport               | every Taxi subcategory    | discretionary | taxi                  | SC.32    |
+| AX.38 | Transport               | Bike                      | cole          | transport             | SC.03    |
+| AX.39 | Travel                  | Lodging                   | discretionary | travel                | SC.28    |
+| AX.40 | Utilities               | Electricity               | cole          | electricity           | SC.13    |
+| AX.41 | Utilities               | Gas, Water, PUB other     | cole          | water, gas, pub other | SC.10-12 |
+| AX.42 | Utilities               | Internet/TV               | cole          | internet              | SC.09    |
+| AX.43 | Utilities               | Mobile                    | cole          | mobile                | SC.06    |
+| AX.44 | Balancing, Reimbursable | all                       | task 12.01    | task 12.01            | none     |
+| AX.45 | Real Estate, Securities | all                       | task 12.01    | task 12.01            | none     |
+| AX.46 | Professional Services   | Currency conversion       | discretionary | forex charges         | SC.33    |
 
 01. **AM.02** the **fs category translation** of the **legacy financial statements** files grooming under healthcare out-of-pocket. RedBooks gives it its own cole subcategory, so the section is unchanged.
 02. **AM.15** the legacy stage 2 fed Education into the books line. RedBooks files it with the academic projects of AM.22 under education, since both are spending on courses.
-03. **AM.21** Agent, Banking, Counseling, Currency conversion and Legal. Currency conversion is the card foreign exchange fee, per SC.34.
+03. **AM.21** Agent, Banking, Counseling and Legal. **AM.46** Currency conversion is the card foreign exchange fee, and maps to forex charges, SC.33. **AM.38** Bike is cost of living and maps to transport, SC.03, beside metro and bus fares, although the legacy mapping filed it under misc discretionary.
 04. **AM.22 to AM.25** project names stay out of committed docs. The **review outputs** list each project with its mapping.
 05. **AM.37** the legacy `fin_expense_cat_map` row for transport also lists a taxi code, but the `cat_map` note sets every taxi subcategory as discretionary. RedBooks follows the `cat_map` note.
 06. **AM.41** each maps to the account `02` subcategory of its own name, SC.10 to SC.12, which together are the legacy PUB water/gas line.
@@ -256,7 +310,7 @@ Account `01` recorded some events differently from how RedBooks posts them. The 
 
 01. **retirement contributions.** Account `01` booked the employee contribution as a transfer from the salary account into the retirement funds, as the legacy statements did. The migration keeps the transfer pattern. RC.01 of the **financial statements design** counts transfers into `retirement` accounts, so a migrated month shows the employee share in RC.01 and in CT.01, and its gross salary line holds the salary as account `01` recorded it.
 02. **government subsidy.** Account `01` filed the subsidy under taxes. It loads as a positive entry on other tax, PS.09, per CR.06.
-03. **cost centers.** The account `01` cost centers load as `clearing` accounts and keep their clearing history, per AR.07 of the **accounting rules**.
+03. **cost centers.** The account `01` cost centers of each currency map onto the user's one cost center of that currency, task 12.03, and keep their clearing history there as separate transfers and expenses, per AR.07 item 07 of the **accounting rules**. The migration never groups them into splits.
 04. **positions closed with no cost basis** load as transfers, per DQ.12 of the **homebudget data review**, and add nothing to realised gain or loss.
 05. **accounts outside HomeBudget net worth** load outside net worth, per DQ.39 of the **homebudget data review**. Their movements reach the net worth movement block, NM.03.
 
@@ -267,5 +321,6 @@ Account `01` recorded some events differently from how RedBooks posts them. The 
 | HO.01 | 04.04 homebudget review | account type per account, subcategory per income record  |
 | HO.02 | task 12.01              | confirm the AM mapping, settle AM.44 and AM.45           |
 | HO.03 | task 12.02              | bridge the paired accounts from account 01 to account 02 |
+| HO.04 | task 12.03              | map account 01 cost centers onto one per currency        |
 
 01. **HO.01** the **homebudget data review** confirms the account `02` mapping with the user before the account `02` seed milestone closes, per its open issue.

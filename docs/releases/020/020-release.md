@@ -26,7 +26,7 @@ Release `0.2.0` is the POC Bookkeeping release. It proves the RedBooks ledger, c
 
 ### Ledger and transactions
 
-Every account keeps its entries in a single general ledger. Expenses, income and transfers each have their own model on top of that ledger. A transfer references two ledger entries, one on the account the money leaves and one on the account it arrives in, following the HomeBudget model. The user records all transactions manually. A split purchase is recorded as separate transactions, one per category in the cost center account, plus a bookkeeping transfer for the exact total purchase amount in the payment method account to match the actual statement transaction.
+Every account keeps its entries in a single general ledger. Expenses, income, transfers and splits each have their own model on top of that ledger. A transfer references two ledger entries, one on the account the money leaves and one on the account it arrives in, following the HomeBudget model. A split records one event that moves money through several accounts and several categories at once, such as a dinner bill paid on a card with a friend's share received in cash, or a salary that lands in a bank account and several retirement fund accounts. The user enters the split's account entries and its category lines on one form, and the split saves when the two sides balance, so each account entry still matches its statement line. Any transaction can carry tags, optional labels such as a provider or a contact name. A pooled account, such as one account for miscellaneous bills or one for money friends owe, tracks each provider or person by tag, and shows its balance by tag beside its total. The user records all transactions manually.
 
 ### Categories
 
@@ -87,7 +87,8 @@ Features in scope for `0.2.0`
 | 13 | login                | OAuth                   |
 | 16 | csv export           | included                |
 | 17 | file storage         | local                   |
-| 19 | split txn            | manual                  |
+| 19 | split txn            | split model             |
+| 22 | tags                 | included                |
 
 Features in later releases:
 
@@ -95,7 +96,6 @@ Features in later releases:
 | -- | -------------------- | ------- |
 | 03 | cloud web app deploy | 0.3.0   |
 | 17 | S3 file storage      | 0.3.0   |
-| 19 | split txn model      | 0.3.0   |
 | 20 | pdf export           | 0.3.0   |
 | 14 | statement loaders    | 0.4.0   |
 | 15 | stm txn reconcile    | 0.4.0   |

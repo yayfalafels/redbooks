@@ -51,7 +51,7 @@ A transfer between the owner's accounts sums to zero on the asset and liability 
 
 ## Opening balances
 
-Each opening balance is an entry on its account with its signed balance, and an equal entry on opening balance equity, which then holds the net worth on the opening date. An opening balance is the account's first reconciled balance point.
+Each opening balance is an entry on its account with its signed balance, and an equal entry on opening balance equity, which then holds the net worth on the opening date. An account opens on the earlier of its reconciled balance point date and its first entry date, and its opening balance is its balance at the start of that date, derived from the point.
 
 | id | account                | type      | entry   |
 | -- | ---------------------- | --------- | ------- |
@@ -61,7 +61,7 @@ Each opening balance is an entry on its account with its signed balance, and an 
 
 ## Reconciled balance points
 
-A reconciled balance point is an amount on a date, confirmed against an independent source such as a statement or a count.
+A reconciled balance point is an amount on any date, confirmed against an independent source such as a statement or a count. An account has one current point at any time, and a new point replaces it while the replaced one stays as history.
 
 01. the balance on a later date is the point plus the entries after it. The balance on an earlier date is the point less the entries between the two dates.
 02. a period roll-up applies the same rule: closing balance equals opening balance plus the period's entries.

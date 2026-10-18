@@ -58,6 +58,7 @@ The `seq` column determines the implementation order
 - **homebudget accounts**: [homebudget-accounts.md](design/homebudget-accounts.md)
 - **agent skills tracker**: [020.05-agent-skills-customization.md](features/020.05-agent-skills-customization.md)
 - **test strategy tracker**: [020.02-test-strategy.md](features/020.02-test-strategy.md)
+- **design tracker**: [020.04-design.md](features/020.04-design.md)
 - **test strategy**: [test-strategy.md](design/test-strategy.md)
 - **test cases**: [test-cases.md](design/test-cases.md)
 - **workflows**: [workflows.md](design/workflows.md)
@@ -173,6 +174,8 @@ _01.04.03 (closed) accounting model is the unmade central decision_
 
 >RESPONSE
 >single GL basic transaction model, with separate models for expense, income, and transfer. yes, separate transfer model, which has foreign key references to two GL entries on each account for the from and to. similar to how it is modeled in HomeBudget.  Split txn handling is manual and dedicated model and UI to be developed in next release.
+>
+>UPDATE: the split model and its UI moved into `0.2.0`, per DC.15 of the **design tracker**.
 
 The balance sheet, the income statement, transfers between accounts and multiple currencies all depend on how a transaction is stored. The design topics list transactions, accounts and financial statements separately, and none of them owns this decision. The **requirements analysis** recommends single-entry records with explicit transfers and defers double-entry. The **single-entry bookkeeping** reference notes that single-entry books do not balance themselves, so arithmetic errors go undetected. That is a direct risk to the first requirement, accuracy.
 
@@ -362,7 +365,7 @@ The catalogue holds the release-level cases, the starting set known before the d
 The design settles how RedBooks meets the requirements before any feature code is written. It runs in three stages, each building on the one before.
 
 01. **user experience**: the design starts from the user workflows, such as recording a transaction, transferring between accounts, reviewing an account ledger and reporting financial statements. The data flows follow from the workflows, naming every data source, store and output, from manual entry and the HomeBudget snapshot through the database to the statements and CSV exports. The front end pages then set the phone-layout screens, navigation and interactions that carry out each workflow.
-02. **accounting model**: the HomeBudget data review works from the account `02` and account `01` HomeBudget databases, the **homebudget wrapper** source code, and the questions in the **homebudget accounts** doc. The **accounting rules** set the signed entry vocabulary and posting model every accounting design doc follows. Together with the workflows, it forms the basis of the accounting data model. The model defines the general ledger with its expense, income and transfer models, accounts and account types, the consolidated category model, multiple currencies with the forex gain or loss, and the financial statements. The review maps HomeBudget accounts, account types, categories and transfer patterns into this model and records the migration rules.
+02. **accounting model**: the HomeBudget data review works from the account `02` and account `01` HomeBudget databases, the **homebudget wrapper** source code, and the questions in the **homebudget accounts** doc. The **accounting rules** set the signed entry vocabulary and posting model every accounting design doc follows. Together with the workflows, it forms the basis of the accounting data model. The model defines the general ledger with its expense, income, transfer and split models, tags, accounts with their reconciled balance points and account types, the consolidated category model, multiple currencies with the forex gain or loss, and the financial statements. The review maps HomeBudget accounts, account types, categories and transfer patterns into this model and records the migration rules.
 03. **system**: the architecture sets the components and how they interact, on the tech stack and repo layout. Users and authentication, networking and security, the API endpoints, the local dev env, the env variables and the docs publishing pipeline complete the design.
 
 Every design doc traces its decisions back to the requirements and forward to the test strategy and its case catalogue. Each feature reconciles its own cases with the design before it is built.
@@ -373,7 +376,7 @@ Every design doc traces its decisions back to the requirements and forward to th
 02. the workflows doc describes every user workflow in the release notes, step by step, with the pages and data each step uses.
 03. the data flows doc names every data source, store and output, and the workflow that moves data between them.
 04. the front end pages doc defines every page with its purpose, phone layout, fields, actions, navigation and the API calls it makes.
-05. the data model defines every entity with its fields, types, keys, constraints and ownership, including the general ledger, the expense, income and transfer models, accounts with opening balances, categories, exchange rates and users. Ledger entries are signed amounts per the **accounting rules**. The schema rebuilds and reloads the seed during development, and versioned forward migrations start before the account `01` migration.
+05. the data model defines every entity with its fields, types, keys, constraints and ownership, including the general ledger, the expense, income, transfer and split models with split templates, tags, accounts with their reconciled balance points, account types and in net worth setting, categories with their statement section, exchange rates, the statement snapshots with their detail and summary lines, the ledger change log and users. Ledger entries are signed amounts per the **accounting rules**. The schema rebuilds and reloads the seed during development, and versioned forward migrations start before the account `01` migration.
 06. the accounts, transactions, multi currency and forex, and financial statements docs define their rules and calculations in enough detail to write oracle test cases from them, including split purchases, transfers between currencies, the reporting currency setting, the rate source and storage, the rate applied to each statement line and the forex gain or loss. The multi currency doc follows the foreign currency entry model of AR.12 in the **accounting rules**.
 07. the HomeBudget data review maps every HomeBudget account, account type and category into the data model, records a migration rule for every data quality issue in both HomeBudget databases, defines the upsert match key for each record kind, and documents the HomeBudget database layout, the account `02` snapshot and the expected-value oracles. It answers the questions in the **homebudget accounts** doc, adds its edge cases to the case catalogue, and sets the reference figures the account `01` migration is checked against.
 08. the architecture doc sets every component, its responsibility and its interfaces, and the tech stack and repo layout docs fix the libraries, versions and folder structure the implementation follows.
@@ -387,27 +390,148 @@ Every design doc traces its decisions back to the requirements and forward to th
 
 **tasks**
 
-| id    | seq | status   | design topic                             |
-| ----- | --- | -------  | ---------------------------------------- |
-| 04.09 | 01  | open     | financial statements                     |
-| 04.04 | 02  | pending  | homebudget data review                   |
-| 04.01 | 03  | pending  | workflows                                |
-| 04.02 | 04  | pending  | data flows                               |
-| 04.03 | 05  | pending  | front end pages                          |
-| 04.05 | 06  | pending  | data model                               |
-| 04.06 | 07  | pending  | accounts                                 |
-| 04.07 | 08  | pending  | transactions                             |
-| 04.19 | 09  | pending  | exchange rate api probe                  |
-| 04.08 | 10  | pending  | multi currency and forex                 |
-| 04.10 | 11  | pending  | architecture                             |
-| 04.11 | 12  | pending  | tech stack                               |
-| 04.12 | 13  | pending  | repo layout                              |
-| 04.13 | 14  | pending  | users and authentication                 |
-| 04.14 | 15  | pending  | networking and security                  |
-| 04.15 | 16  | pending  | api endpoints                            |
-| 04.16 | 17  | pending  | local dev env                            |
-| 04.17 | 18  | pending  | env variables                            |
-| 04.18 | 19  | pending  | docs publishing pipeline                 |
+The status of each design topic lives in the **design tracker**, which this table does not repeat.
+
+| id    | seq | design topic                             |
+| ----- | --- | ---------------------------------------- |
+| 04.21 | 01  | accounting rules                         |
+| 04.09 | 02  | financial statements                     |
+| 04.04 | 03  | homebudget data review                   |
+| 04.01 | 04  | workflows                                |
+| 04.02 | 05  | data flows                               |
+| 04.03 | 06  | front end pages                          |
+| 04.05 | 07  | data model                               |
+| 04.06 | 08  | accounts                                 |
+| 04.07 | 09  | transactions                             |
+| 04.19 | 10  | exchange rate api probe                  |
+| 04.08 | 11  | multi currency and forex                 |
+| 04.10 | 12  | architecture                             |
+| 04.11 | 13  | tech stack                               |
+| 04.12 | 14  | repo layout                              |
+| 04.13 | 15  | users and authentication                 |
+| 04.14 | 16  | networking and security                  |
+| 04.15 | 17  | api endpoints                            |
+| 04.16 | 18  | local dev env                            |
+| 04.17 | 19  | env variables                            |
+| 04.18 | 20  | docs publishing pipeline                 |
+| 04.20 | 21  | design audit                             |
+
+__04.20 (open) design audit__
+
+This audit checks the design and planning documents against one another, with the **workflows** as the reference for the latest design, plus the release roadmap for cross-release context. The core design agrees: the **workflows**, data flows, front end pages, financial statements design and **accounting rules** hold the same split model, tags, reconciled balance point, month-end rate basis and snapshot series. Most findings are planning and test documents not yet carried forward.
+
+_audit issues_
+
+| id       | status | severity | title                                                   |
+| -------- | ------ | -------- | ------------------------------------------------------- |
+| 04.20.01 | closed | high     | one cost center per currency meets nine migrated ones   |
+| 04.20.02 | closed | high     | the opening balance is defined two ways                 |
+| 04.20.03 | closed | high     | the split model is stated three ways                    |
+| 04.20.04 | closed | high     | test oracles predate the month-end rate basis           |
+| 04.20.05 | open   | high     | design topic status disagrees with content              |
+| 04.20.06 | open   | medium   | the changes page misses writes before the point         |
+| 04.20.07 | closed | medium   | closed vocabularies cannot be seeded from account 02    |
+| 04.20.08 | closed | medium   | the prior month-end rate is an unstated deviation       |
+| 04.20.09 | open   | medium   | the data model doc is an easyMCF stub                   |
+| 04.20.10 | closed | medium   | milestone criteria lag the design                       |
+| 04.20.11 | closed | medium   | accounting rules decisions list is stale                |
+| 04.20.12 | closed | medium   | new workflows have no catalogue cases                   |
+| 04.20.13 | open   | low      | small id and reference slips in the design docs         |
+| 04.20.14 | open   | low      | front end pages lag a few workflow steps                |
+| 04.20.15 | open   | low      | table and example defects in the statements design      |
+
+_04.20.01 (closed) one cost center per currency meets nine migrated ones_
+
+>RESPONSE
+>one cost center per currency stands. Mapping the account `01` cost centers onto it is a migration task, 12.03, with MR.13, 02.MIG.08 and criterion 12.CK.08 checking the merged balance.
+
+AR.07 item 06 and DF.21 give the user one cost center per currency, found or created by the split write. The account `01` migration brings 9 cost centers, M1.02 of the HomeBudget data review, several in SGD, so the split write has no single cost center to post to, and new splits could land in a legacy cost center that 02.MIG.08 checks against HomeBudget. Recommendation: flag exactly one cost center per currency as the split clearing account, enforced by a partial unique index, and leave the migrated ones as plain `clearing` accounts.
+
+_04.20.02 (closed) the opening balance is defined two ways_
+
+>RESPONSE
+>the balance floats for any date. Criterion 10.API.04, the txn and accounts description and schema, WF.11, DF.10, WF.16.03 and PG.30 now follow AR.10 and AR.11.
+
+AR.10 and AR.11 derive the opening balance from a reconciled balance point on any date. Criterion 10.API.04 still reads "the opening balance is the account's first reconciled balance point", the txn and accounts database paragraph stores an opening balance, and WF.11 and DF.10 compute "the nearest reconciled balance point before the date plus the signed entries between", which fails before the point. Recommendation: restate all three as AR.11 item 01.
+
+_04.20.03 (closed) the split model is stated three ways_
+
+>RESPONSE
+>the txn and accounts description, the design stage, design criterion 05, the `redbooks-ledger` scope, the accounting rules opening paragraph and the homebudget accounts doc now follow AR.07, and 01.04.03 carries an update note.
+
+AR.07, WF.09 and DF.21 post a split through a hidden cost center in `0.2.0`. The txn and accounts description still records a split as one expense per category plus a transfer, against its own criterion 05, the accounting rules opening paragraph calls the cost center optional, and the homebudget accounts doc defers a split model to the next release. Recommendation: rewrite the three passages to AR.07, and note under 01.04.03 that splits moved into `0.2.0`.
+
+_04.20.04 (closed) test oracles predate the month-end rate basis_
+
+>RESPONSE
+>02.LED.14, 02.FS.07, 02.UI.30, criteria 11.API.07 and 11.API.15 and the financial statements milestone description now follow the rate basis and the stale rule of WF.16.
+
+02.LED.14 expects `"-54.00"` at the day's rate where CE.12 shows `"-53.60"` at the prior month-end rate. 02.FS.07 converts June entries at the June rate, and 02.UI.30 cans the old forex figure `"9.50"`. Criterion 11.API.15 marks every later balance sheet stale for every write, where WF.16 marks by position against the reconciled point. Recommendation: recompute the cases from SX.01 and restate 11.API.15 as WF.16, before an agent fixes code to match the stale oracles.
+
+_04.20.05 (open) design topic status disagrees with content_
+
+>RESPONSE
+>the design tasks table above drops its status column, and the **design tracker** holds each topic's status alone. Accounting rules takes id 04.21, so 04.19 names only the exchange rate API probe. The open items of 04.04 and 04.09 remain open.
+
+This table marks 04.19 accounting rules, 04.09, 04.04 and 04.01 closed, while the design tracker marks 04.09 open, the rest pending and has no accounting rules row. 04.19 also names both accounting rules and the exchange rate API probe. 04.04 is closed with its open issue and 02.OD.07 still open, and 04.09 is closed with handoffs HO.01 to HO.05 unconfirmed and 02.FS.01 still lacking sections. Recommendation: give accounting rules its own id, keep one status list in the design tracker, and close or reopen 04.04 and 04.09 against their open items.
+
+_04.20.06 (open) the changes page misses writes before the point_
+
+DF.17 marks a balance sheet stale for a write dated before its account's point and after the month end, but the changes page reads only rows dated on or before the month end, per DF.17, WF.16.03 and PG.30. Such a month shows stale with no change listed. Recommendation: link each change log row to the snapshots it marked, and list by that link.
+
+_04.20.07 (closed) closed vocabularies cannot be seeded from account 02_
+
+>RESPONSE
+>a split builder reconstructs a sample of account `02` cost center groups as splits, MR.14 of the data migration and DF.13, checked by 02.SEED.25. Account `01` reconstructs none, since every expense ran through its cost center. 02.TD.02 and seed criterion 06 add splits and a tagged pooled account.
+
+02.TD.02, 02.CS.02 and seed criterion 06 require a seeded row of every closed value, but 02.TD.02 omits splits and tags, and account `02` holds neither, per MR.05 and DF.13. Recommendation: add both to 02.TD.02 and seed one split and one tagged pooled account for `bob`.
+
+_04.20.08 (closed) the prior month-end rate is an unstated deviation_
+
+>RESPONSE
+>the accounting rules record the prior month-end rate as an implementation decision under AR.12 item 06: a fixed rate for the month and simpler forecasting, at the cost of the forex line absorbing each month's movement. 02.TD.05, 02.FS.02 and HUM.05 item 03 compare in each account's currency.
+
+IAS 21 translates income and expenses at transaction-date rates, or an average where rates do not fluctuate significantly ([ifrscommunity.com](https://ifrscommunity.com/knowledge-base/ias-21-effects-of-changes-in-foreign-exchange-rates/), [ICAEW](https://www.icaew.com/technical/corporate-reporting/ifrs/ifrs-accounting-standards-tracker/ias-21-the-effects-of-changes-in-foreign-exchange-rates)). The prior month-end rate is a deliberate choice that keeps entry lines fixed, but the design states no trade-off. It also makes 02.FS.02 and HUM.05 item 03 disagree with HomeBudget on foreign-account expenses. Recommendation: record the deviation as an implementation decision, compare category totals in each account's currency, and narrow HUM.05 item 03 to reporting-currency accounts.
+
+_04.20.09 (open) the data model doc is an easyMCF stub_
+
+>RESPONSE
+>handled in a parallel session. No change here.
+
+The data model is titled "Easy MCF POC Local", references the easyMCF repo and defines no RedBooks entity, yet the workflows, data flows, test strategy and 02.DB.01 cite it. Design criterion 05 also omits splits, split templates, tags, snapshot lines, the change log, the in-net-worth setting and the category section. Recommendation: replace the stub with a RedBooks skeleton of the entities the design names, and extend criterion 05.
+
+_04.20.10 (closed) milestone criteria lag the design_
+
+>RESPONSE
+>the financial statements milestone, its database, api and front end criteria, txn FE criterion 04, the mkdocs user guide and the design criteria now follow the design.
+
+The financial statements milestone groups the balance sheet "by account asset class" and describes the income statement without its summary blocks and year columns. FS database criterion 05 omits reconciled point and account writes, txn FE criterion 04 omits the tag filter, the mkdocs user guide omits splits and tags, and the Implement paragraph of the release notes omits splits and tags. Recommendation: carry the workflows into the milestone criteria in one pass.
+
+_04.20.11 (closed) accounting rules decisions list is stale_
+
+>RESPONSE
+>decisions 03, 04, 05 and 07 are marked settled with their source, and AR.18's closing sentence follows the financial statements design.
+
+Decisions 03 cost center, 04 billing accounts, 05 statement mappings and 07 liability presentation stay open, and AR.18 still calls liability presentation a decision for 04.09, though AR.07, the HomeBudget data review and the financial statements design settle each. Recommendation: mark each settled with its source, as item 06 is.
+
+_04.20.12 (closed) new workflows have no catalogue cases_
+
+>RESPONSE
+>captured in scope: the txn and accounts milestone owns the split, tag, section and in net worth cases, the financial statements milestone the stale prompt and year marker cases, and the seed milestone the account map failure case.
+
+Splits and tags have only ledger cases, 02.LED.17 to 02.LED.20 and 02.API.06. 02.API.01 and 02.API.13 omit both resources, TR.20 and TR.21 are to be added, and the stale prompt of WF.10.06, the year stale marker, the account map failure and the category section have no case. The workflows traceability table lacks RN.07 and RN.08, and RN.06 omits WF.20. Recommendation: add the resources to 02.API.01 and 02.API.13, UI cases for PG.33 to PG.36, and the missing traceability rows.
+
+_04.20.13 (open) small id and reference slips in the design docs_
+
+The data flows use DF.10 twice and count five database areas while listing six. CE.04 cites AR.07 item 05, now item 07, and CE.08 numbers two notes 04 and defers the employer contribution that PS.04 seeds. Account 02 categories item 01 of the data migration maps onto "SC.01 to SC.40", though taxes maps to PS.08. Recommendation: renumber the tag balances flow, and fix each citation.
+
+_04.20.14 (open) front end pages lag a few workflow steps_
+
+PG.08's purpose and PG.02's row omit WF.09 and WF.20, the add button hides on "the three entry forms" of four, and a PG.27 transfer row opens PG.14 even for a split payment source. PG.06 and PG.04 lack the tag call and tag balances call, RW.02 skips the income statement that XD changes, and PG.30 and WF.16.03 list opening balance changes for reconciled point changes. The WF.10 inventory row omits PG.34 and DF.21. Recommendation: apply the corrections in one edit.
+
+_04.20.15 (open) table and example defects in the statements design_
+
+The IS sections table lost its net income column, with stray separators and an unaligned row layout. SP.03's new balance sheet sentence repeats PR.04 unclearly, SX.03 lists a zero cost center that the clearing note hides, and HO.04 is already met. Recommendation: restore the table, restate SP.03, and close HO.04.
 
 ## Agent skills implement customization
 
@@ -415,7 +539,7 @@ This milestone is the second pass on the agents and skills, run once the design 
 
 The bespoke skills for `0.2.0` are:
 
-01. `redbooks-ledger`: the general ledger, the expense, income and transfer models, opening balances and split purchases. It builds on `accounting` and `postgresql`.
+01. `redbooks-ledger`: the general ledger, the expense, income, transfer and split models, tags, and balances from reconciled balance points. It builds on `accounting` and `postgresql`.
 02. `redbooks-currency`: the money type, the reporting currency setting, the exchange rate API and storage, and the forex gain or loss calculation. It builds on `accounting` and `python`.
 03. `redbooks-statements`: the income statement, the balance sheet, drill down and CSV export. It builds on `accounting`.
 04. `redbooks-backend-api`: the RedBooks API endpoints, user-scoped data access and OAuth session handling. It builds on `fastapi` and `postgresql`.
@@ -452,7 +576,7 @@ This milestone builds the repeatable local environment. Docker Compose runs the 
 
 ## Schema and account 02 seed
 
-This milestone builds the database schema from the data model design and loads a dated snapshot of the user's HomeBudget account `02` database from `data/` as the seed that tests, demos and daily development run on. The snapshot script copies the live database named in `.env` into `data/`, and the seed loads the newest copy. The seed is the real data, loaded as-is with its account names, payees and notes, so RedBooks is usable from day one and its figures compare directly with HomeBudget. The seed and everything built from it stay in uncommitted locations, out of version control and the published docs. During `0.2.0` development, one command rebuilds the schema and reloads the seed, and every schema change, in this milestone and in every feature milestone after it, runs through that command and changes the schema, the seed load and the data model doc together. The snapshot supplies each account's reconciled balance point. The fixture builder writes the expected-value fixtures from the snapshot with plain SQL, from HomeBudget's own balances, transfer amounts and category totals.
+This milestone builds the database schema from the data model design and loads a dated snapshot of the user's HomeBudget account `02` database from `data/` as the seed that tests, demos and daily development run on. The snapshot script copies the live database named in `.env` into `data/`, and the seed loads the newest copy. The seed is the real data, loaded as-is with its account names, payees and notes, so RedBooks is usable from day one and its figures compare directly with HomeBudget. The seed and everything built from it stay in uncommitted locations, out of version control and the published docs. During `0.2.0` development, one command rebuilds the schema and reloads the seed, and every schema change, in this milestone and in every feature milestone after it, runs through that command and changes the schema, the seed load and the data model doc together. The snapshot supplies each account's reconciled balance point. The fixture builder writes the expected-value fixtures from the snapshot with plain SQL, from HomeBudget's own balances, transfer amounts and category totals. A split builder reconstructs a sample of the account `02` cost center groups as splits, and the second seed user holds a tagged pooled account, so the seed holds every closed vocabulary value, per audit issue 04.20.07. The milestone tracker's test cases step adds a case for a load that fails on an account missing from the account map, per audit issue 04.20.12.
 
 **closure criteria**
 
@@ -461,7 +585,7 @@ This milestone builds the database schema from the data model design and loads a
 03. the seed and the expected-value fixtures live in the uncommitted location the repo layout design sets, `git check-ignore --no-index` passes for every seed path, and the docs build includes none of them.
 04. every account has its reconciled balance point from the snapshot.
 05. counts, balances and dates derived from other rows are computed by the loader, loader inputs are pinned, loading twice gives an identical database, and every changed generated file is reviewed.
-06. every closed vocabulary value has a seeded row, and every constraint comes from the requirements.
+06. every closed vocabulary value has a seeded row, including a split with two payment sources and a tagged pooled account, and every constraint comes from the requirements.
 07. the seed holds stored USD to SGD exchange rates for every date it needs, and each transfer between currencies carries the two amounts the snapshot holds for it.
 08. the expected-value fixtures hold the category totals, account balances, fx transfer amounts and record counts, each read from the snapshot with plain SQL without running RedBooks code.
 09. the seed includes every edge case in the case catalogue, and passes every expected-value check.
@@ -587,13 +711,13 @@ The pages cover the currencies page and the exchange rates page, in the phone la
 
 ## Txn and accounts
 
-This milestone builds the ledger and transaction entry. Every account keeps its entries in the general ledger, with an opening balance on its own date. The user adds, edits and deletes expenses, income and transfers from the phone-layout pages. A transfer links two ledger entries, one on each account, with an amount in each account's currency. An expense or an inflow posts directly on any asset or liability, and a refund reverses its category on the account that receives it. The cost center is an optional clearing account for splits: a split purchase is recorded as one expense per category in the cost center account plus a transfer from the payment account for the total. Billing accounts return to zero when settled. These follow AR.05 to AR.08 of the **accounting rules**. Each account holds one of the user's currencies from the currency model. Amounts use the money type. A reporting currency account accepts an expense or income in any of the user's currencies and posts the converted amount to its ledger. A foreign currency account accepts only its own currency. The record keeps the nominal currency, the nominal amount and the rate. A card's foreign exchange fee is a separate expense on the same card, per AR.12 of the **accounting rules**. Transfers between currencies and entries in another currency take their rate from the currency model.
+This milestone builds the ledger and transaction entry. Every account keeps its entries in the general ledger, and its balance on any date derives from its reconciled balance point and the signed entries, per AR.11 of the **accounting rules**. The user adds, edits and deletes expenses, income, transfers and splits from the phone-layout pages, and labels any transaction with optional tags. A transfer links two ledger entries, one on each account, with an amount in each account's currency. An expense or an inflow posts directly on any asset or liability, and a refund reverses its category on the account that receives it. A split records one event across several accounts and categories, posted through a hidden cost center: each payment source is a transfer at its statement amount, and each category line posts on the cost center, per AR.07. Billing accounts return to zero when settled, and a pooled account tells its counterparties apart by tag. These follow AR.05 to AR.08 of the **accounting rules**. Each account holds one of the user's currencies from the currency model. Amounts use the money type. A reporting currency account accepts an expense or income in any of the user's currencies and posts the converted amount to its ledger. A foreign currency account accepts only its own currency. The record keeps the nominal currency, the nominal amount and the rate. A card's foreign exchange fee is a separate expense on the same card, per AR.12 of the **accounting rules**. Transfers between currencies and entries in another currency take their rate from the currency model. The milestone tracker's test cases step adds catalogue cases for splits and tags across the api and frontend silos, including split and tag rows in 02.API.01 and 02.API.13, UI cases for the split and tag pages, and the category section and the in net worth setting, per audit issue 04.20.12.
 
 **database**
 
-The schema holds accounts with their type, currency and opening balance, the two-level consolidated category model of categories and their subcategories, the general ledger entries, and the expense, income and transfer records built on them. Amounts use exact decimal column types, and each account's currency references one of the user's currencies in the currency model.
+The schema holds accounts with their type, in net worth setting, currency and reconciled balance point, the two-level consolidated category model of categories with their statement section and their subcategories, the general ledger entries, the expense, income, transfer and split records built on them, split templates, and tags. Amounts use exact decimal column types, and each account's currency references one of the user's currencies in the currency model.
 
-01. the account, category, subcategory, ledger entry, expense, income and transfer tables exist with their keys and constraints, per the data model design.
+01. the account, category, subcategory, ledger entry, expense, income, transfer, split, split template and tag tables exist with their keys and constraints, per the data model design.
 02. every subcategory belongs to exactly one category, and every expense and income record references one subcategory.
 03. every expense and income record references exactly one ledger entry, and every transfer references two ledger entries on two different accounts.
 04. every expense and income record stores its entered currency, entered amount and exchange rate. When the entered currency is the account's currency, the rate is 1 and the ledger amount equals the entered amount.
@@ -605,13 +729,13 @@ The schema holds accounts with their type, currency and opening balance, the two
 
 **api endpoints**
 
-The endpoints create, read, update and delete accounts, categories, subcategories, expenses, income and transfers, list transactions by account, category and subcategory, and report account balances on a date. Writes that touch the ledger run in one database transaction, so a transfer writes both of its entries or neither.
+The endpoints create, read, update and delete accounts, categories, subcategories, expenses, income, transfers, splits and tags, list transactions by account, category and subcategory, and report account balances on a date. Writes that touch the ledger run in one database transaction, so a transfer writes both of its entries or neither.
 
 01. every resource endpoint covers the case set in the test strategy: required fields, validation errors, a missing record, the happy path, a request without a session and another user's record.
 02. creating, editing or deleting an expense, income or transfer updates the ledger entries it owns in the same database transaction.
 03. a transfer between two currency pairs, such as SGD and USD accounts stores the amount in each account's currency, each to the decimal places of its currency.
-04. the account balance for any date equals a reconciled balance point plus the signed entries between the two dates, and the opening balance is the account's first reconciled balance point.
-05. a split purchase leaves the payment account balance equal to the total purchase amount on the statement.
+04. the account balance floats for any date: it equals the reconciled balance point plus the entries after it for a later date, or the point less the entries between for an earlier one, per AR.11. The opening balance is derived at the account's opening date, per AR.10, and an edit before the point moves it.
+05. a split posts each payment source as a transfer with the hidden cost center at its statement amount and each category line on the cost center, leaves the cost center at zero, and saves only when its payment sources and lines balance.
 06. a transfer between currencies stores the rate it used. The default rate comes from the currency model for the transfer date, with the user's recorded rate in place of the fetched one where one exists. An override the user makes on the transfer is stored on that transfer only and leaves the currency model's rates unchanged.
 07. creating or editing an account accepts only one of the user's currencies.
 08. creating or editing an expense or income accepts only a subcategory of the user's own categories, and listing by category returns the transactions of all its subcategories.
@@ -623,12 +747,12 @@ The endpoints create, read, update and delete accounts, categories, subcategorie
 
 **front end pages and behaviors**
 
-The pages cover the account list with balances, an account ledger, the category list with its subcategories, the transaction list, a detail page for each account, category, subcategory, expense, income and transfer, and entry forms for expenses, income and transfers, all in the phone layout. A transfer between currencies fills in its paired amount from the currency model's rate for the transfer date, which the user can override on the transfer.
+The pages cover the account list with balances, an account ledger, the category list with its subcategories, the transaction list, a detail page for each account, category, subcategory, expense, income, transfer and split, and entry forms for expenses, income, splits and transfers, all in the phone layout. A transfer between currencies fills in its paired amount from the currency model's rate for the transfer date, which the user can override on the transfer.
 
-01. the user creates, edits and deletes accounts, categories, subcategories, expenses, income and transfers from the web app.
+01. the user creates, edits and deletes accounts, categories, subcategories, expenses, income, transfers, splits and tags from the web app, and an account with tagged entries shows its balance by tag.
 02. the account list shows each account's current balance in its own currency organized by account type. clicking on an account opens up the account detail page with option to edit account attributes.
 03. the account ledger lists the account's transactions in a monthly view by date with a running balance. User can page through back and next or select ledger for a given month.
-04. the transaction list filters by account, category, subcategory and month or custom date range.
+04. the transaction list filters by account, category, subcategory, tag and month or custom date range.
 05. the category list shows each category with its subcategories nested beneath it. clicking on a category opens the category detail page with its attributes, an option to edit them, and its subcategories with their totals for the selected month. clicking on a subcategory opens the subcategory detail page with its attributes, an option to edit them, and its transactions for the selected month with their total.
 06. clicking on an expense in a ledger or transaction list opens the expense detail page, showing its date, amount, account, category and subcategory, payee and notes, with options to edit and delete it.
 07. clicking on an income opens the income detail page, showing its date, amount, account, category and subcategory, and notes, with options to edit and delete it.
@@ -646,9 +770,9 @@ The pages cover the account list with balances, an account ledger, the category 
 
 This milestone builds the income statement and the balance sheet from the ledger. Each statement has two views. The year view shows the twelve months of a year side by side, and the month view shows one month in detail. Clicking a month in the year view opens the month view for that month, and clicking a line in the month view opens the transactions that make it up. The statements report in the user's reporting currency, set on the currencies page of the currency model.
 
-A closed month is reported from a stored snapshot. On the 1st of every month, in the user's timezone, a snapshot job generates and stores the snapshot of the month before, holding both statements for that month in the reporting currency. The job runs inside the backend, at start and every hour, so a month whose 1st passed while the laptop was off is picked up on the next start. The current month is a month to date run, built on request and never stored. A re-run of a past month stores a new version and keeps the old ones, as a slowly changing dimension of type 2, and every report shows the newest version. Every write to a transaction, rate or opening balance that a snapshot covers marks that snapshot stale, and the user sees which lines drifted, views the changes and re-runs the month. Changing the reporting currency takes confirmed warnings and a choice of past years to regenerate in the new currency. Snapshots in the old currency stay in the history, which lists statements by year, then by currency where a year has more than one, then by month. The seed load and the account `01` migration generate a snapshot for every month they load, and the migration validation checks them.
+A closed month is reported from a stored snapshot. On the 1st of every month, in the user's timezone, a snapshot job generates and stores the snapshot of the month before, holding both statements for that month in the reporting currency. The job runs inside the backend, at start and every hour, so a month whose 1st passed while the laptop was off is picked up on the next start. The current month is a month to date run, built on request and never stored. A re-run of a past month stores a new version and keeps the old ones, as a slowly changing dimension of type 2, and every report shows the newest version. Every write to a transaction, a month-end rate, a reconciled balance point, an account or a category that a snapshot covers marks that snapshot stale, and after the write the app prompts to re-run the affected months. The user sees which lines drifted, views the changes and re-runs the month, and a year carries a stale marker while any of its months is stale. Changing the reporting currency takes confirmed warnings and a choice of past years to regenerate in the new currency. Snapshots in the old currency stay in the history, which lists statements by year, then by currency where a year has more than one, then by month. The seed load and the account `01` migration generate a snapshot for every month they load, and the migration validation checks them. The milestone tracker's test cases step adds catalogue cases for the stale prompt and the year stale marker, per audit issue 04.20.12.
 
-The income statement follows the two-level category model. Each category line totals the subcategory lines beneath it, for income and for expenses. The balance sheet shows each account at its balance converted with the currency model's rates, grouped by account asset class, with the forex gain or loss as its own line. Both statements export to CSV from either view. The income statement shows expenses as positive amounts only when it is presented. The books, the API and every oracle hold signed entries, per AR.18 of the **accounting rules**.
+The income statement follows the two-level category model, grouped into statement sections by each category's section, and leads with its summary block. Each category line totals the subcategory lines beneath it, for income and for expenses. Every entry converts at the month-end rate of the month before, and every balance at its own month-end rate. The balance sheet leads with the net worth movement and shows each account at its converted balance under the section and subsection its account type sets, with the forex gain or loss as its own line. Both statements export to CSV from either view. The income statement shows expenses as positive amounts only when it is presented. The books, the API and every oracle hold signed entries, per AR.18 of the **accounting rules**.
 
 **database**
 
@@ -656,9 +780,9 @@ Statements are built from the ledger, the category model, a reporting currency a
 
 01. every account type maps to one balance sheet group, per the data model design.
 02. the stored exchange rates cover every month-end date the seed data statements need.
-03. each snapshot version is keyed by user, month and reporting currency, with its run kind, run time, valid from and valid to times, and stale flags for each statement. A partial unique index allows one current version per key.
+03. each snapshot version belongs to the series of its user, month and reporting currency, and is unique by its series and valid from time, with its version number, run kind, run time, valid from and valid to times, and stale flags for each statement. A partial unique index allows one current version per series.
 04. each snapshot stores every line of both statements, the forex gain or loss, net worth and the rates it used, as exact decimals.
-05. every ledger, rate, opening balance and category write records a change log row with its before and after values in the same database transaction.
+05. every ledger, rate, reconciled balance point, account, category and split write records a change log row with its before and after values in the same database transaction.
 
 **api endpoints**
 
@@ -670,7 +794,7 @@ The endpoints return the income statement and the balance sheet for a year, with
 04. the balance sheet month view matches its expected account balances and net worth at the end of a seed data month.
 05. each month in the year view equals the matching month view, for both statements, and the income statement year total equals the sum of its twelve months.
 06. the forex gain or loss line matches its expected value for each month with USD balances.
-07. changing the reporting currency on the currencies page converts every statement line using the currency model's rates for the statement dates, with the user's recorded rates in place of fetched ones where they exist.
+07. changing the reporting currency on the currencies page converts every statement line on the rate basis of the financial statements design, entries at the month-end rate of the month before and balances at their own month end, with the user's recorded rates in place of fetched ones where they exist.
 08. each transfer between currencies keeps its own stored amounts in the ledger, and the statements convert account balances with the currency model's rates.
 09. the drill down for every month view line returns exactly the transactions that sum to that line.
 10. each CSV export holds the same values as the matching view or transaction list response. A closed month's export carries the snapshot values and its version time.
@@ -678,7 +802,7 @@ The endpoints return the income statement and the balance sheet for a year, with
 12. the snapshot job generates each closed month with no snapshot once, in the user's timezone and current reporting currency, at backend start and every hour, catching up every month missed while the app was down. Each run reaches a terminal status with its original exception recorded on failure.
 13. a closed month reads its current snapshot version, and the month to date run is built on request and never stored.
 14. a re-run stores a new version that becomes current, closes the version before it with its valid to time, and leaves every older version retrievable unchanged.
-15. a write dated in a month marks that month's income statement snapshot stale, and the balance sheet snapshots of that month and every later month. A stale view returns each line's snapshot amount, current amount and difference, and the changes endpoint returns every change log row since the snapshot ran that the month's statements include.
+15. a write dated in a month marks that month's income statement snapshot stale. It marks the balance sheet snapshots by where it falls against its account's reconciled balance point: the month of a write after the point and every later month, or every month that ends before the date of a write before the point. A month-end rate change marks the balance sheets of its month and every later month and the income statements of its month and the next. A stale view returns each line's snapshot amount, current amount and difference, and the changes endpoint returns every change log row since the snapshot ran that the month's statements include.
 16. a reporting currency change regenerates every closed month of the years the user checks, and always the current year, in the new currency. Snapshots in the old currency stay current for their own currency and stay retrievable.
 17. the history returns every snapshot grouped by year, then by reporting currency where a year holds more than one, then by month, with each month's current version, version count and stale flags.
 18. the seed load and the account `01` migration generate a snapshot for every month they load, and the reference checks compare those snapshots with the HomeBudget reference figures.
@@ -687,11 +811,11 @@ The endpoints return the income statement and the balance sheet for a year, with
 
 The pages show the year view and the month view of the income statement and the balance sheet, the statement history, the snapshot versions and changes, and the reporting currency change, in the phone layout. Each view has a year or month picker, the reporting currency with a link to the currencies page, and a CSV export action.
 
-01. the year view of the income statement shows each category, with its subcategories beneath it, and the amount for each month of the year and the year total.
-02. the year view of the balance sheet shows each account, grouped by asset class, with its balance at the end of each month of the year, and net worth for each month.
+01. the year view of the income statement leads with the summary block, then shows investment P and L, personal income, total expenses and each expense category with its subcategories beneath it, with the year total, the monthly average, the December of the year before and each month of the year.
+02. the year view of the balance sheet leads with the net worth movement, then shows net worth over its sections and each account under its section and subsection, with its balance at the end of the December before and of each month of the year, and a month-end rate row.
 03. the user moves back and forward a year, or picks a year, and the year view updates to match.
 04. clicking a month in the year view opens the month view for that month.
-05. the month view of the income statement shows each category with its subcategories beneath it and their amounts for the month. The month view of the balance sheet shows each account's balance at the end of the month and net worth.
+05. the month view of each statement shows the same blocks as its year view, with their amounts for the month.
 06. the user moves back and forward a month, or returns to the year view, from the month view.
 07. clicking a line in the month view opens the transactions that make it up.
 08. the forex gain or loss shows as its own line on the balance sheet, in both views.
@@ -715,7 +839,7 @@ This milestone migrates the user's HomeBudget account `01` history into their wo
 05. records that overlap the account `02` seed match by the match key, and no duplicate account, category or transaction is created.
 06. identical transactions on the same day each load as their own record.
 07. running the migration a second time adds zero records and leaves every balance and total unchanged.
-08. each migrated cost center matches its HomeBudget balance at every month end in the scope.
+08. the account `01` cost centers of each currency map onto the one cost center of that currency, and the migrated cost center matches the sum of their HomeBudget balances at every month end in the scope.
 09. migrated balances and category totals match the account `01` reference figures, checked by the validation utilities.
 10. the migration job reaches a terminal status with its original exception recorded on failure, and commits its progress as it goes.
 11. the migration loads only rows dated 2017-01-01 to 2026-05-23, and no retired account.
@@ -727,9 +851,11 @@ This milestone migrates the user's HomeBudget account `01` history into their wo
 | ----- | --- | ------- | ------------------------------------------------------ |
 | 12.01 | 01  | pending | account 01 category mapping from the legacy workbooks  |
 | 12.02 | 02  | pending | reconcile bridging between account 01 and account 02   |
+| 12.03 | 03  | pending | account 01 cost centers onto one per currency          |
 
 01. **12.01** capture the `cat_map` region of the HomeBudget workbook and the `fin_expense_cat_map` region of the financial statements workbook, whose ids are in `data/gsheets.json`, so every account `01` pair in the scope reaches its line, and settle whether the balancing and reimbursable categories are expense categories or clearing accounts.
 02. **12.02** reset each account held in both accounts to its last account `01` reconciled point, mostly from February or March 2026, and carry the difference to the account `02` records through the reconcile scope until the next reconciliation settles it.
+03. **12.03** map the account `01` cost centers of each currency onto the user's one cost center of that currency, per AR.07 item 06, so new splits and migrated clearing history share it, and check the merged cost center against the sum of the HomeBudget cost center balances at every month end.
 
 ## Audit skills promote learning
 
@@ -749,7 +875,7 @@ This milestone writes and publishes the RedBooks documentation site. It covers t
 **closure criteria**
 
 01. the developer guide covers setup, configuration, running, testing and debugging.
-02. the user guide covers sign-in, accounts, categories, transactions, transfers, financial statements and CSV export.
+02. the user guide covers sign-in, accounts, categories, tags, transactions, transfers, splits, financial statements and CSV export.
 03. the GitHub Actions workflow publishes the site on merge to `main`.
 04. the site builds in strict mode, which fails on every broken link and anchor, and published pages carry no release references. The workflow and token prerequisites are listed as user actions.
 05. published pages show no real account names or personal details, only hypothetical names at real Singapore institutions, and the build includes no data file.

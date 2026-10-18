@@ -127,7 +127,7 @@ These examples apply the signed rules in the **accounting rules**: assets and in
 02. the cost center ends at 0.00, and the two expenses sum to the 100.00 transfer, per AR.15.
 03. each record balances: the transfer's asset and liability entries sum to 0.00, and each expense's cost center entry equals its expense entry.
 
-The release milestones plan a dedicated split purchase model and interface for the next release. Until then, the HomeBudget migration carries splits either as this clearing pattern or as one transaction with several expense entries. That choice belongs to the data model topic, 04.05.
+RedBooks records a split with its own split model, posted through a hidden cost center by this same clearing pattern, per AR.07 of the **accounting rules**. The seed reconstructs a sample of these account `02` groups as splits, per the **data migration**, and the account `01` clearing history loads as separate transfers and expenses.
 
 ## Questions for the HomeBudget data review
 

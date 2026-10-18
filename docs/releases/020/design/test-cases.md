@@ -38,27 +38,16 @@ It is an output of the test strategy and cases milestone, and meets that milesto
 
 The strategy and catalogue come before the design, so some expected values depend on decisions the design makes. Each affected case states its current assumption. The design topic that settles an input updates every case it affects and removes the input from this table before the topic closes, per design closure criterion 15 of the **release milestones**.
 
-| id       | design topic             | open decision                                  | cases affected        |
-| -------- | ------------------------ | ---------------------------------------------- | --------------------- |
-| 02.OD.01 | multi currency and forex | rounding rule for a converted amount           | 02.LED.04             |
-| 02.OD.02 | multi currency and forex | rate used for income statement lines           | 02.FS.06, 02.FS.07    |
-| 02.OD.03 | multi currency and forex | precision of a rate derived from an override   | 02.LED.15             |
-| 02.OD.04 | users and authentication | session lifetime and cookie settings           | 02.OWN.10, 02.OWN.11  |
-| 02.OD.05 | api endpoints            | validation status code and error body shape    | 02.API.01             |
-| 02.OD.06 | repo layout, tech stack  | test folder layout and markers                 | all protocols         |
-| 02.OD.07 | homebudget data review   | account 02 mapping onto the canonical taxonomy | 02.SEED.03            |
-| 02.OD.08 | accounts                 | balance before an account's first point        | 02.LED.06             |
-| 02.OD.09 | exchange rate api probe  | rate for a weekend or missing date             | 02.FX.09              |
-| 02.OD.10 | financial statements     | balance sheet presentation of liabilities      | 02.FS.04, 02.UI.24    |
-| 02.OD.12 | data model               | split model for migrated account `02` splits   | 02.LED.17, 02.SEED.10 |
+| id       | design topic             | open decision                                  | cases affected       |
+| -------- | ------------------------ | ---------------------------------------------- | -------------------- |
+| 02.OD.03 | multi currency and forex | precision of a rate derived from an override   | 02.LED.15            |
+| 02.OD.04 | users and authentication | session lifetime and cookie settings           | 02.OWN.10, 02.OWN.11 |
+| 02.OD.05 | api endpoints            | validation status code and error body shape    | 02.API.01            |
+| 02.OD.06 | repo layout, tech stack  | test folder layout and markers                 | all protocols        |
+| 02.OD.07 | homebudget data review   | account 02 mapping onto the canonical taxonomy | 02.SEED.03           |
 
-01. **02.OD.01** the cases assume round half up and state the round half even result beside it.
-02. **02.OD.02** the cases assume each income statement line converts at the rate on its transaction date, and the balance sheet converts at the month-end rate.
-03. **02.OD.05** FastAPI returns 422 for request validation by default. The cases assume 422 with the failing field named in the body.
-04. **02.OD.08** AR.11 of the **accounting rules** sets the balance between and before reconciled balance points. The cases assume a date before an account's first point answers `"0.00"`.
-05. **02.OD.09** the cases assume a weekend or missing date takes the last published rate before it. Design task 04.19 probes the real behavior and its saved responses replace this assumption.
-06. **02.OD.10** the cases assume the API returns liability balances with their signed negative values. Presentation is a rendering rule, per AR.18.
-07. the forex gain or loss is computed when a statement is built and is never posted to the ledger, per the response to requirements audit item 01.04.07 in the **release milestones**. The cases treat this as settled.
+01. **02.OD.05** FastAPI returns 422 for request validation by default. The cases assume 422 with the failing field named in the body.
+02. the forex gain or loss is computed when a statement is built and is never posted to the ledger, per the response to requirements audit item 01.04.07 in the **release milestones**. The cases treat this as settled.
 
 ## Traceability
 
@@ -72,13 +61,13 @@ Each case id has the form `02.<silo>.<nn>`. Each case traces to a release notes 
 
 | id    | release notes section   | milestones      | cases                                                      |
 | ----- | ----------------------- | --------------- | ---------------------------------------------------------- |
-| RN.01 | ledger and transactions | 10              | 02.LED.06 to 17, 02.DB.07 to 15, 02.API.02 to 13           |
+| RN.01 | ledger and transactions | 10              | 02.LED.06 to 20, 02.DB.07 to 15, 02.API.02 to 13           |
 | RN.02 | categories              | 10, 07, 12      | 02.DB.07, 02.API.09, 02.UI.15, 02.SEED.03, 02.MIG.03       |
 | RN.03 | multiple currencies     | 17, 10          | 02.LED.01 to 05, 11 to 16, 02.FX.01 to 11, 02.API.14 to 17 |
 | RN.04 | financial statements    | 11              | 02.FS.01 to 13, 02.UI.23 to 32, 02.E2E.03, 04              |
 | RN.05 | users and login         | 09              | 02.OWN.01 to 12, 02.DB.03, 04, 13, 02.E2E.05               |
 | RN.06 | mobile layout           | 06, FE sections | 02.UI.01 to 34, 02.ENV.14, 02.HUM.01 to 06                 |
-| RN.07 | HomeBudget history      | 07, 12          | 02.SEED.01 to 24, 02.MIG.01 to 20                          |
+| RN.07 | HomeBudget history      | 07, 12          | 02.SEED.01 to 25, 02.MIG.01 to 20                          |
 | RN.08 | lessons applied         | all             | 02.ENV.01 to 15, 02.SEED.12, 13, 02.E2E.01                 |
 
 ## Ledger and money silo
@@ -90,7 +79,7 @@ Protocol unit. Pure functions with inline values and a pinned clock. Amounts bel
 | 02.LED.01 | RN.03, 02.MN.01            | money type rejects float input                   |
 | 02.LED.02 | RN.03, 02.MN.01            | exact decimal addition                           |
 | 02.LED.03 | RN.03, 17.API.08           | quantize to currency decimal places              |
-| 02.LED.04 | 17.API.08, 02.OD.01        | rounding boundary on conversion                  |
+| 02.LED.04 | 17.API.08                  | rounding boundary on conversion                  |
 | 02.LED.05 | RN.03                      | arithmetic across currencies rejected            |
 | 02.LED.06 | 10.API.04, AR.11, 02.CS.03 | balance from a reconciled balance point          |
 | 02.LED.07 | RN.01, AR.03, 02.CS.09     | expense and income entry signs                   |
@@ -104,13 +93,16 @@ Protocol unit. Pure functions with inline values and a pinned clock. Amounts bel
 | 02.LED.15 | 10.API.10, 10.FE.12        | override of rate or converted amount             |
 | 02.LED.16 | 10.API.12, AR.12           | card fx fee is a separate expense                |
 | 02.LED.17 | 10.API.05, AR.07, AR.15    | split purchase through the cost center           |
+| 02.LED.18 | 10.API.05, AR.07, CE.15    | split with two payment sources                   |
+| 02.LED.19 | 10.API.05, AR.07, AR.12    | split payment source in another currency         |
+| 02.LED.20 | AR.08                      | balance by tag on a pooled account               |
 
 - **02.LED.01** input `Money(0.1, "SGD")` with a float. Expected: a type error. `Money("0.10", "SGD")` is accepted.
 - **02.LED.02** input `Money("0.10", "SGD") + Money("0.20", "SGD")`. Expected `"0.30"` exactly.
 - **02.LED.03** input `"12.5"` SGD, `"12.5"` USD, `"1000.4"` JPY. Expected `"12.50"`, `"12.50"`, `"1000"`, using the catalog decimal places of 2, 2 and 0.
-- **02.LED.04** input `"10.00"` USD to SGD at rate `1.3445`, raw result 13.445. Expected `"13.45"` under round half up, `"13.44"` under round half even. The case keeps the single value the design picks. A second input at rate `1.34567` gives `"13.46"` under either rule.
+- **02.LED.04** input `"10.00"` USD to SGD at rate `1.3445`, raw result 13.445. Expected `"13.45"`, rounded half up per the **financial statements design**. A second input at rate `1.34567` gives `"13.46"`.
 - **02.LED.05** input `Money("1.00", "SGD") + Money("1.00", "USD")`. Expected: a currency mismatch error.
-- **02.LED.06** input: a reconciled balance point of `"100.00"` SGD on 2026-05-24, an expense entry `"-12.50"` on 2026-05-25 and an income entry `"200.00"` on 2026-06-01. Expected balance `"100.00"` on 2026-05-24, `"87.50"` on 2026-05-25 and on 2026-05-31, `"287.50"` on 2026-06-01. With the only point moved to `"287.50"` on 2026-06-01, the same entries give `"87.50"` on 2026-05-25 and `"100.00"` on 2026-05-24, the point less the entries between. A date before the first point follows 02.OD.08.
+- **02.LED.06** input: a reconciled balance point of `"100.00"` SGD on 2026-05-24, an expense entry `"-12.50"` on 2026-05-25 and an income entry `"200.00"` on 2026-06-01. Expected balance `"100.00"` on 2026-05-24, `"87.50"` on 2026-05-25 and on 2026-05-31, `"287.50"` on 2026-06-01. With the only point moved to `"287.50"` on 2026-06-01, the same entries give `"87.50"` on 2026-05-25, the point less the entries between. The account then opens on 2026-05-25, its first entry date, with an opening balance of `"100.00"`, per AR.10, and 2026-05-24 answers `"0.00"`. In the first case the account opens on 2026-05-24, the point date, and any earlier date answers `"0.00"`.
 - **02.LED.07** input: a purchase of `"12.50"` and a salary of `"200.00"` on an SGD bank account. Expected: the purchase posts `"-12.50"` on the account and `"-12.50"` on its expense category, and the salary posts `"200.00"` on the account and `"200.00"` on its income category. A posting with every sign flipped balances and still fails the case.
 - **02.LED.08** input: a `"20.00"` refund for household goods received on a credit card. Expected: `"20.00"` on the card and `"20.00"` on the household category, so spending and the amount owed both fall.
 - **02.LED.09** input: a transfer of `"50.00"` SGD from bank account A to bank account B, then a `"50.00"` credit card payment from A. Expected: `"-50.00"` on A and `"50.00"` on B, then `"-50.00"` on A and `"50.00"` on the card. Each pair sums to `"0.00"` and no income or expense entry is written.
@@ -118,10 +110,13 @@ Protocol unit. Pure functions with inline values and a pinned clock. Amounts bel
 - **02.LED.11** input: a transfer from a USD account to an SGD account with stored amounts `"1000.00"` USD and `"1345.67"` SGD and rate `1.34560`. Expected: entries `"-1000.00"` USD and `"1345.67"` SGD. The SGD amount stays `"1345.67"` even though rate times amount gives 1345.60.
 - **02.LED.12** input: an expense of `"10.00"` USD on an SGD reporting currency account at rate `1.34567`. Expected: account entry `"-13.46"` SGD, with nominal currency USD, nominal amount `"10.00"` and rate `1.34567` stored on the expense.
 - **02.LED.13** input: an expense of `"10.00"` SGD on an SGD account. Expected: rate `1`, account entry `"-10.00"`.
-- **02.LED.14** input: an expense of `"40.00"` USD on a USD account at a fetched rate `1.35`, then an expense in SGD on the same account. Expected: the first posts `"-40.00"` USD to the account ledger, and reports `"-54.00"` SGD only in the expense report total. The second is rejected with a message naming the account currency.
+- **02.LED.14** input: an expense of `"40.00"` USD on a USD account at a fetched rate `1.35`, then an expense in SGD on the same account. Expected: the first posts `"-40.00"` USD to the account ledger, and the expense report total converts it at the month-end rate of the month before, `"-53.60"` SGD at `1.34000`, never at the fetched rate of the day. The second is rejected with a message naming the account currency.
 - **02.LED.15** input: the 02.LED.12 expense with the converted amount overridden to `"13.50"`. Expected: account entry `"-13.50"` and rate `1.35`. With the rate overridden to `1.3` instead, expected account entry `"-13.00"`. The stored rate precision follows 02.OD.03.
 - **02.LED.16** input: a `"100.00"` USD charge on an SGD credit card at rate `1.35`, billed on the card statement as `"136.50"` SGD. Expected: `"-135.00"` on the travel category, `"-1.50"` on the fx fees category, and `"-136.50"` on the card, matching the statement line.
-- **02.LED.17** input: one card statement line of `"40.00"`, moved by transfer to the cost center, then expenses of `"20.00"`, `"15.50"` and `"4.50"` in three subcategories on the cost center. Expected: `"-40.00"` on the card, `"40.00"` then `"-20.00"`, `"-15.50"` and `"-4.50"` on the cost center, a cost center balance of `"0.00"`, and expense entries summing exactly to `"-40.00"`.
+- **02.LED.17** input: a split with one card payment source of `"40.00"` and lines of `"20.00"`, `"15.50"` and `"4.50"` in three subcategories. Expected: `"-40.00"` on the card, `"40.00"` then `"-20.00"`, `"-15.50"` and `"-4.50"` on the cost center, a cost center balance of `"0.00"`, and expense entries summing exactly to `"-40.00"`. A split whose lines sum to `"39.99"` is refused with the amount left named.
+- **02.LED.18** input: a split with a card payment source of `"100.00"` paid from the card, a cash wallet payment source of `"40.00"` received into the wallet, and one socializing line of `"60.00"`. Expected: `"-100.00"` on the card, `"40.00"` on the wallet, a socializing expense of `"-60.00"`, a cost center balance of `"0.00"`, and the card and wallet ledgers each showing one row at its own amount, per CE.15.
+- **02.LED.19** input: an SGD split with a USD card payment source of `"30.00"` at a dealt rate of `1.35000`, and one SGD line of `"40.50"`. Expected: `"-30.00"` USD on the card, a transfer into the SGD cost center of `"40.50"` with both amounts stored, an expense of `"-40.50"`, and a cost center balance of `"0.00"`.
+- **02.LED.20** input: a pooled bills account, a liability, with a bill expense of `"60.00"` tagged `provider A`, a bill expense of `"25.00"` tagged `provider B`, and a payment transfer of `"60.00"` from the bank tagged `provider A`. Expected: an account balance of `"-25.00"`, a `provider A` balance of `"0.00"`, a `provider B` balance of `"-25.00"`, and no change to any statement line when a tag is renamed or merged.
 
 ## Data model and database silo
 
@@ -219,7 +214,7 @@ Protocols unit and api against the stub rate API, and live for 02.FX.11.
 | 02.FX.06 | 17.API.09           | direct      | fetch job reaches a terminal status           |
 | 02.FX.07 | 17.DB.03            | direct      | catalog loads from the rate API currency list |
 | 02.FX.08 | 17.DB.05, 02.MN.03  | direct      | rate keeps full precision                     |
-| 02.FX.09 | 17.API.06, 02.OD.09 | oracle      | rate for a weekend or missing date            |
+| 02.FX.09 | 17.API.06           | oracle      | rate for a weekend or missing date            |
 | 02.FX.10 | 02.CS.04            | self-report | no live network call in silo protocols        |
 | 02.FX.11 | 02.RR.01, 02.PR.07  | client      | live rate fetch matches the stub's shape      |
 
@@ -231,7 +226,7 @@ Protocols unit and api against the stub rate API, and live for 02.FX.11.
 - **02.FX.06** input: a fetch job run with the stub raising a server error part way through a date range. Expected: the job ends in a failed status with the original exception recorded, and the rates fetched before the failure stay stored.
 - **02.FX.07** input: load the catalog from the stub list. Expected: one catalog row per stub currency, with its code, name and decimal places.
 - **02.FX.08** input: the stub returns `1.3456712345`. Expected: the stored and returned rate is `1.3456712345`.
-- **02.FX.09** input: request USD.SGD for Saturday 2026-06-06 with the stub holding Friday 2026-06-05 only. Expected: per 02.OD.09, the Friday rate, stored for the requested date with its source.
+- **02.FX.09** input: request USD.SGD for Saturday 2026-06-06 with the stub holding Friday 2026-06-05 only. Expected: the Friday rate, the last published rate before the date per the **financial statements design**, stored for the requested date with its source.
 - **02.FX.10** input: a silo test that opens a connection to a public host. Expected: the socket guard fails the test.
 - **02.FX.11** input: the live protocol fetches USD.SGD for one past date into the test database. Expected: a rate within the 30 second budget, a response shape equal to the stub fixture's, and a stored row with source `fetched`. The run log names the live mode.
 
@@ -246,7 +241,7 @@ Protocols unit and api. Hand-built ledgers with hard-coded totals, then the seed
 | 02.FS.03 | 11.API.03           | oracle | category line equals sum of subcategory lines       |
 | 02.FS.04 | 11.API.04, 02.TD.07 | oracle | balance sheet month-end balances and net worth      |
 | 02.FS.05 | 11.API.05           | oracle | year view months equal month views                  |
-| 02.FS.06 | 11.API.06, 02.OD.02 | oracle | forex gain or loss line                             |
+| 02.FS.06 | 11.API.06           | oracle | forex gain or loss line                             |
 | 02.FS.07 | 11.API.07           | oracle | change of reporting currency                        |
 | 02.FS.08 | 11.API.08           | oracle | transfers keep stored amounts in statements         |
 | 02.FS.09 | 11.API.09           | oracle | drill down returns exactly the line's transactions  |
@@ -256,12 +251,12 @@ Protocols unit and api. Hand-built ledgers with hard-coded totals, then the seed
 | 02.FS.13 | 02.CS.03            | oracle | month with no transactions                          |
 
 - **02.FS.01** input: a hand-built June 2026 ledger with Food: Groceries `"-120.00"` and Dining `"-45.50"`, Transport: Taxi `"-30.00"`, and Salary `"5000.00"`. Expected: Food `"-165.50"`, Transport `"-30.00"`, expenses `"-195.50"`, income `"5000.00"`, net `"4804.50"`.
-- **02.FS.02** input: the seed over the snapshot period. Expected: each subcategory expense total equals its value in `expected/category-totals.json`, compared with the sign rule the fixture states. Also traces 07.CK.09.
+- **02.FS.02** input: the seed over the snapshot period. Expected: each subcategory expense total equals its value in `expected/category-totals.json`, compared in each account's own currency, before statement conversion, with the sign rule the fixture states. Also traces 07.CK.09.
 - **02.FS.03** input: every category line of every month and year view of the seed. Expected: each category equals the sum of its subcategories exactly.
-- **02.FS.04** input: the seed at the end of each month from May 2026 and on the snapshot date. Expected: every account equals `expected/account-balances.json`, liabilities carry their signed values per 02.OD.10, and net worth equals the sum of converted account balances.
+- **02.FS.04** input: the seed at the end of each month from May 2026 and on the snapshot date. Expected: every account equals `expected/account-balances.json`, liabilities carry their signed values per the **financial statements design**, and net worth equals the sum of converted account balances.
 - **02.FS.05** input: the 2026 year view and each month view of both statements. Expected: each month column equals its month view, and the income statement year total equals the sum of its twelve months.
-- **02.FS.06** input: a USD account holding `"1000.00"` USD, rate `1.34000` on 2026-05-31 and `1.35000` on 2026-06-30, and a USD expense of `"100.00"` on 2026-06-15 at `1.34500`. Expected: opening `"1340.00"` SGD, expense `"-134.50"` SGD, closing `"1215.00"` SGD, forex gain `"9.50"` SGD. With no expense, the gain is `"10.00"`. The ledger holds no forex entry before or after the statement is built.
-- **02.FS.07** input: the 02.FS.01 ledger with the reporting currency switched from SGD to USD and rate `1.35000` for June. Expected: every line converted, such as Food `"-122.59"` USD, and a user rate recorded for a date replaces the fetched one in the conversion.
+- **02.FS.06** input: a USD account holding `"1000.00"` USD, rate `1.34000` on 2026-05-31 and `1.35000` on 2026-06-30, and a USD expense of `"100.00"` on 2026-06-15. Expected: opening `"1340.00"` SGD, expense `"-134.00"` SGD at the May month-end rate, closing `"1215.00"` SGD, forex gain `"9.00"` SGD, the closing balance of USD 900.00 revalued. With no expense, the gain is `"10.00"`. The ledger holds no forex entry before or after the statement is built.
+- **02.FS.07** input: the 02.FS.01 ledger with the reporting currency switched from SGD to USD, and a USD.SGD month-end rate of `1.35000` on 2026-05-31, the rate June entries convert at. Expected: every line converted, such as Food `"-122.59"` USD, and a user rate recorded for 2026-05-31 replaces the fetched one in the conversion.
 - **02.FS.08** input: the 02.LED.11 transfer in the seed period. Expected: the ledger keeps `"-1000.00"` USD and `"1345.67"` SGD, and the balance sheet converts the USD balance at the month-end rate.
 - **02.FS.09** input: every line of every month view in the seed. Expected: the drill down returns transactions whose amounts sum exactly to the line.
 - **02.FS.10** input: the CSV export of each year view, each month view and the transaction list. Expected: the statement CSVs equal the JSON response with the presentation rule applied, so expense lines read as positive amounts, and the transaction list CSV holds the signed amounts of its response, all as decimal strings.
@@ -298,7 +293,7 @@ Protocol frontend. The React app in the `iPhone 13` profile with canned API resp
 | 02.UI.21 | 10.FE.01           | create, edit and delete requests for every resource |
 | 02.UI.22 | 10.FE.16           | views refresh after a write and keep typed input    |
 | 02.UI.23 | 11.FE.01, AR.18    | income statement year view                          |
-| 02.UI.24 | 11.FE.02, 02.OD.10 | balance sheet year view                             |
+| 02.UI.24 | 11.FE.02           | balance sheet year view                             |
 | 02.UI.25 | 11.FE.03           | year navigation                                     |
 | 02.UI.26 | 11.FE.04           | month click opens month view                        |
 | 02.UI.27 | 11.FE.05           | month views of both statements                      |
@@ -333,13 +328,13 @@ Protocol frontend. The React app in the `iPhone 13` profile with canned API resp
 - **02.UI.21** input: create, edit and delete one record of each resource. Expected: each sends the method, path and body the API endpoints design defines.
 - **02.UI.22** input: with an expense form open and a note half typed, save another expense from a second panel, then save the first. Expected: the account ledger, the balance and the open statement view reload after each save, and the half-typed note is kept until its own save.
 - **02.UI.23** input: canned 2026 income statement with signed expense lines. Expected: categories with subcategories beneath, twelve month columns and a year total, with expenses shown as positive amounts.
-- **02.UI.24** input: canned 2026 balance sheet. Expected: accounts grouped by asset class, month-end balances and net worth per month, with liabilities shown per 02.OD.10.
+- **02.UI.24** input: canned 2026 balance sheet. Expected: accounts grouped by section and subsection, month-end balances and net worth per month, with liabilities shown with their signed values per the **financial statements design**.
 - **02.UI.25** input: tap back, next and pick 2025. Expected: each requests and shows the matching year.
 - **02.UI.26** input: tap June in the year view. Expected: the June month view opens.
 - **02.UI.27** input: canned June month views. Expected: the income statement shows categories with subcategories and amounts, and the balance sheet shows month-end balances and net worth.
 - **02.UI.28** input: back, next and return to year from the month view. Expected: each loads the matching view.
 - **02.UI.29** input: tap Food in the June month view. Expected: the transactions behind Food for June are listed.
-- **02.UI.30** input: canned balance sheet with a forex line `"9.50"`. Expected: the forex gain or loss shows as its own line in both views.
+- **02.UI.30** input: canned balance sheet with a forex line `"9.00"`. Expected: the forex gain or loss shows as its own line in both views.
 - **02.UI.31** input: canned reporting currency USD. Expected: both statements show USD, with a link to the currencies page.
 - **02.UI.32** input: tap export on the June income statement. Expected: a CSV downloads whose rows equal the values shown on screen.
 - **02.UI.33** input: every page at 390, 393 and 1280 pixels wide with realistic-length names. Expected: page width equals viewport width on each page.
@@ -386,7 +381,7 @@ Milestone 07. Protocols unit, db and reference, against the account `02` snapsho
 | 02.SEED.01 | 07.CK.08, 02.TD.06           | oracle | snapshot reader returns every record table        |
 | 02.SEED.02 | RN.07, 07.CK.02              | direct | account 02 snapshot loads as-is                   |
 | 02.SEED.03 | RN.02, 07.CK.02, 02.OD.07    | direct | every HomeBudget account and category maps        |
-| 02.SEED.04 | 07.CK.04, AR.11              | direct | every account has its reconciled balance points   |
+| 02.SEED.04 | 07.CK.04, AR.11              | direct | every account has one current balance point       |
 | 02.SEED.05 | 07.CK.05                     | direct | loading twice gives an identical database         |
 | 02.SEED.06 | 07.CK.06, 09.DB.03, 02.CS.02 | direct | two users and every vocabulary value seeded       |
 | 02.SEED.07 | 07.CK.07, 17.DB.06, 11.DB.02 | direct | seed rates cover every needed date                |
@@ -407,11 +402,12 @@ Milestone 07. Protocols unit, db and reference, against the account `02` snapsho
 | 02.SEED.22 | DQ.01                        | direct | rows after the snapshot date are skipped          |
 | 02.SEED.23 | DQ.02                        | direct | transfers with no account are skipped, reported   |
 | 02.SEED.24 | MK.01                        | direct | reload matches every row by its device key        |
+| 02.SEED.25 | 07.CK.06, AR.07              | oracle | reconstructed splits balance and match HomeBudget |
 
 - **02.SEED.01** input: the newest **homebudget snapshot**. Expected: the reader returns the Account, Category, SubCategory, Expense, Income and Transfer rows dated on or before the snapshot date, each table with the row count in `expected/record-counts.json` after the skips of the **homebudget data review**.
 - **02.SEED.02** input: the seeded database and the snapshot. Expected: every snapshot row dated on or before the snapshot date, other than a row a data review rule skips, has one seed row, with its account name, payee, notes, date and AccountTrans amount unchanged.
 - **02.SEED.03** input: every account and every category and subcategory in the snapshot. Expected: each account takes one account type of the **financial statements design**, per the account mapping of the **homebudget data review**, and each subcategory one subcategory line of that design. An unmapped value fails the load with its name.
-- **02.SEED.04** input: the snapshot's Account table and the seeded accounts. Expected: every account holds one reconciled balance point, equal to its `balance` on its `balanceDate` in the snapshot.
+- **02.SEED.04** input: the snapshot's Account table and the seeded accounts. Expected: every account holds one current reconciled balance point, equal to its `balance` on its `balanceDate` in the snapshot.
 - **02.SEED.05** input: load the seed twice into empty databases with pinned loader inputs. Expected: identical row-level contents, every balance, count and date derived from other rows computed by the loader, and no change to any generated file under git.
 - **02.SEED.06** input: the seeded database. Expected: `alice` and `bob` each own accounts and transactions, and every value in 02.TD.02 has at least one row.
 - **02.SEED.07** input: every date the seed ledger and seed statements need. Expected: a stored USD.SGD rate exists for each, including every month end from 2026-05-31 to 2026-09-30.
@@ -432,6 +428,7 @@ Milestone 07. Protocols unit, db and reference, against the account `02` snapsho
 - **02.SEED.22** input: a snapshot holding expenses and transfers dated after the snapshot date, from a recurring template and from a future-dated entry. Expected: none loads, each appears in the load report under DQ.01, and a later snapshot past their dates loads them once.
 - **02.SEED.23** input: the 13 transfers dated 2026-05-09 to 2026-05-17 that name no account. Expected: none loads, each appears in the load report under DQ.02, and no balance changes.
 - **02.SEED.24** input: load a snapshot, edit one expense's amount and notes in a copy of it, then load the copy over the seeded database, and load a snapshot of a rebuilt desktop database. Expected: each reload matches every row by source, table, origin device id and `deviceKey`, the edited expense updates in place with no duplicate, and the row count is unchanged.
+- **02.SEED.25** input: the sample of account `02` cost center groups the split builder reconstructs, each a transfer into the cost center, the expenses booked on it and any transfers out. Expected: each loads as one split whose payment sources and category lines balance, each account entry equals its AccountTrans amount, the cost center returns to `"0.00"` on each group's last date, and the account balances still equal `expected/account-balances.json`.
 
 ## HomeBudget account 01 migration
 
@@ -467,7 +464,7 @@ Milestone 12. Protocols unit, db and reference, against account `01` fixture row
 - **02.MIG.05** input: account `01` fixture rows that overlap the account `02` seed in accounts, categories and transactions. Expected: overlapping records match by the match key, and no duplicate account, category or transaction is created.
 - **02.MIG.06** input: two identical expenses on one day in the fixture rows. Expected: two records, and a rerun keeps two.
 - **02.MIG.07** input: migrate the same fixture rows twice. Expected: zero records added on the second run, and every balance and total unchanged.
-- **02.MIG.08** input: fixture rows from 2017-01-01 where every expense runs through the cost center, per CE.04 of the **accounting rules**. Expected: each cost center's balance at every month end equals its HomeBudget balance from AccountTrans, and every cost center is `"0.00"` on 2026-05-23.
+- **02.MIG.08** input: fixture rows from 2017-01-01 where every expense runs through the cost center, per CE.04 of the **accounting rules**. Expected: the account `01` cost centers of each currency map onto that currency's one cost center, whose balance at every month end equals the sum of their HomeBudget balances from AccountTrans, and it is `"0.00"` on 2026-05-23.
 - **02.MIG.09** input: the migrated fixture user. Expected: balances and category totals equal the account `01` reference figures from the data review, through the reference checks.
 - **02.MIG.10** input: a migration with a fault injected at a known row. Expected: the job ends in a failed status with the original exception recorded, the rows before the fault stay committed, and a rerun adds only the rest.
 - **02.MIG.11** input: migrate into `alice`. Expected: `bob`'s row counts and balances unchanged.
@@ -581,7 +578,7 @@ Run after every automated protocol for the milestone passes, on a phone through 
 
 01. the year view scrolls across twelve months on a phone without losing the line labels.
 02. moving between year view, month view and drill down is easy to follow.
-03. one month's income statement agrees with the HomeBudget app's report for that month.
+03. one month's income statement agrees with the HomeBudget app's report for that month on reporting currency accounts. Lines on foreign currency accounts differ by the rate basis of the **financial statements design**.
 04. the exported CSV opens in a spreadsheet with correct amounts.
 
 **02.HUM.06 homebudget account 01 migrate**

@@ -16,7 +16,8 @@ You edit RedBooks markdown documentation for style while keeping its meaning. Yo
 01. wording, punctuation, list format and section placement in narrative prose, per the **documentation-style** rules.
 02. table layout, per the **markdown-tables** rules, with every column of every table checked against rule 06.
 03. the head of every doc, so that only the title and at most one intro paragraph sit above `## Contents`. Move a `## Summary` or other section found above it to directly below Contents, and add it to the list.
-04. a full read of each file before editing, listing every violation by rule number, so the fix pass is complete.
+04. revision language in design targets, per rule 10. Requirements, design docs and published pages read as the first and only version. Rewrite revision phrasing into a plain statement of the current specification, and move what changed and why into the feature tracker under the milestone that made the change.
+05. a full read of each file before editing, listing every violation by rule number, so the fix pass is complete.
 
 ## Hands off
 

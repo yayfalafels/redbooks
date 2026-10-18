@@ -55,9 +55,10 @@ __release features__
 | 16 | csv export           | -----              | X               | X                   |
 | 17 | file storage         | local + s3         | local           | S3                  |
 | 18 | reconcile algorithm  | manual             | --              | --                  |
-| 19 | split txn            | manual             | manual          | X                   |
+| 19 | split txn            | manual             | X               | X                   |
 | 20 | pdf export           | -----              | --              | X                   |
 | 21 | forecast             | fin stm gs         | --              | --                  |
+| 22 | tags                 | -----              | X               | X                   |
 
 | id | feature              | reconciled ledger  | beta app store          |
 | -- | -------------------- | ------------------ | ----------------------- |
@@ -83,3 +84,10 @@ __release features__
 | 19 | split txn            | X                  | X                       |
 | 20 | pdf export           | X                  | X                       |
 | 21 | forecast             | tbd                | tbd                     |
+| 22 | tags                 | X                  | X                       |
+
+## Future integrations
+
+These items are not in scope for `0.2.0` or any named release.
+
+01. **total effort and planning.** An integration with total effort and planning, which extends the transaction and category data model with activity tagging, so each transaction can be tied to the activity it served.

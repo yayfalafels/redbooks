@@ -5,7 +5,7 @@ description: Direct, concise prose rules for narrative markdown documentation, c
 
 # Documentation style
 
-These nine rules govern narrative prose in `*.md` files. They apply to requirements, design docs, feature trackers, published pages, and skill and agent instruction files. They never apply to source code, config syntax, table cell structure beyond the **markdown-tables** skill, or literal command and log output inside a fenced block.
+These ten rules govern narrative prose in `*.md` files. They apply to requirements, design docs, feature trackers, published pages, and skill and agent instruction files. They never apply to source code, config syntax, table cell structure beyond the **markdown-tables** skill, or literal command and log output inside a fenced block.
 
 ## Rules
 
@@ -18,6 +18,7 @@ These nine rules govern narrative prose in `*.md` files. They apply to requireme
 07. **table of contents.** Add a `## Contents` list once a doc passes about 50 lines. Above it sit only the `#` title and at most one short intro paragraph with no heading. A `## Summary`, `## Overview` or any other `##` section goes below `## Contents` and appears in its list. The one exception is the feature tracker template, whose `## Guideline` and feature status heading precede Contents.
 08. **alias references.** Collect every file path, external reference and URL in one `## References` section, each with a bold alias, and refer to them by alias in the text. A moved file then changes one line.
 09. **state the chosen specification.** Design text states what was chosen and why. It leaves out the alternatives that were rejected, and records a judgment call in an **implementation decision** callout.
+10. **no revision language in design targets.** Requirements, design docs and published pages read as the first and only version. When a design changes, rewrite the affected text to state the current specification as if it had always been so. Leave out phrases such as "updated from X to Y", "now uses", "previously", "no longer", "was changed to account for Z", "new" or "revised", and leave out changelog or revision-history sections. Record what changed and why in the feature tracker, under the milestone that made the change, such as the Design milestone in the release milestones doc.
 
 ## References
 
