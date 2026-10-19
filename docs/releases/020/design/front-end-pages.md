@@ -2,17 +2,6 @@
 
 This document defines every page of the RedBooks `0.2.0` web app, with its purpose, phone layout, fields, actions, navigation and the API calls it makes. It is design topic 04.03 of the **release milestones** and carries out each step of the **workflows** on a phone screen. The **api endpoints** topic, 04.15, fixes the request and response of each call named here.
 
-## Summary
-
-01. **thirty-six pages in four tabs.** A bottom tab bar holds Accounts, Transactions, Statements and More. The account list is the home page.
-02. **one add button on every page.** A floating add button above the tab bar opens a sheet with expense, income, transfer and split. Recording an expense is the add button, expense, a subcategory, an amount and save.
-03. **one phone layout, a 390 pixel wide column.** Every page is a single column with a sticky header, the content, and the tab bar. On a desktop width the same column centres at 640 pixels. No page scrolls sideways. The year views scroll their twelve month columns inside the table, with the line labels fixed.
-04. **lists open details, details open forms.** Every list row opens its detail page. Every detail page links to the account, category and subcategory it shows, and offers edit and delete. A save or delete returns to the list the user came from.
-05. **the page address holds the view.** Month, year and filters live in the URL query, so back, refresh and bookmarks restore the view, and a statement line opens a filtered transaction list by link.
-06. **shared components keep money consistent.** One amount display, one amount input, one currency and rate group, one month picker and one confirmation dialog serve every page.
-07. **statements follow one layout and show where their figures come from.** Every statement view lays out its lines as the presentation view of the **financial statements design** sets them, and names its source, a snapshot version with its run time or month to date. A stale snapshot marks its month and each line that drifted, with the snapshot amount, the current amount and the difference, and offers view changes and re-run.
-08. **every page has four states.** Loading, empty, error and populated, per 02.FE.04 of the **test strategy**.
-
 ## Contents
 
 - [Summary](#summary)
@@ -30,6 +19,17 @@ This document defines every page of the RedBooks `0.2.0` web app, with its purpo
 - [Refresh after writes](#refresh-after-writes)
 - [API calls](#api-calls)
 - [Traceability](#traceability)
+
+## Summary
+
+01. **multiple pages and tabs.** A bottom tab bar holds Accounts, Transactions, Statements and More. The account list is the home page.
+02. **one add button on every page.** A floating add button above the tab bar opens a sheet with expense, income, transfer and split. Recording an expense is the add button, expense, a subcategory, an amount and save.
+03. **one phone layout, a 390 pixel wide column.** Every page is a single column with a sticky header, the content, and the tab bar. On a desktop width the same column centres at 640 pixels. No page scrolls sideways. The year views scroll their twelve month columns inside the table, with the line labels fixed.
+04. **lists open details, details open forms.** Every list row opens its detail page. Every detail page links to the account, category and subcategory it shows, and offers edit and delete. A save or delete returns to the list the user came from.
+05. **the page address holds the view.** Month, year and filters live in the URL query, so back, refresh and bookmarks restore the view, and a statement line opens a filtered transaction list by link.
+06. **shared components keep money consistent.** One amount display, one amount input, one currency and rate group, one month picker and one confirmation dialog serve every page.
+07. **statements follow one layout and show where their figures come from.** Every statement view lays out its lines as the presentation view of the **financial statements design** sets them, and names its source, a snapshot version with its run time or month to date. A stale snapshot marks its month and each line that drifted, with the snapshot amount, the current amount and the difference, and offers view changes and re-run.
+08. **every page has four states.** Loading, empty, error and populated, per 02.FE.04 of the **test strategy**.
 
 ## References
 
@@ -272,14 +272,13 @@ PG.11 follows PG.09 with income-kind categories, no refund toggle and no payee. 
 ### PG.33 split form
 
 01. **purpose**: record or edit a split, WF.09.
-02. **header**: date, required, today by default, the split's currency, payee and notes. The currency starts on the currency of the first payment source.
+02. **header**: date, required, today by default and the date of every payment source and line, the split's currency, payee and notes. The currency starts on the currency of the first payment source and picks the cost center, and the payee is saved on every category line.
 03. **payment sources**, one or more rows, each with:
     01. the account, through UC.09.
     02. paid from or received into, a two-way switch, paid from by default.
     03. the amount in the account's currency, through UC.02.
-    04. the date, defaulting to the header date.
-    05. on an account in another currency, the rate and the amount in the split's currency, through UC.03.
-    06. tags, optional, through UC.14.
+    04. on an account in another currency, the rate and the amount in the split's currency, through UC.03.
+    05. tags, optional, through UC.14.
 04. **category lines**, one or more rows, each with a category and subcategory of either kind through UC.08, an amount in the split's currency, and tags, optional, through UC.14. An expense line offers the refund toggle of PG.09.
 05. **amount left**: a bar pinned above the save button shows the payment sources less the category lines, in the split's currency, and turns neutral at 0.00.
 06. **actions**:
@@ -388,7 +387,7 @@ Three rows: Income statement and Balance sheet, opening PG.23 and PG.25 on the c
     06. the retirement contributions, marked informational.
 
     Expenses and taxes paid show as positive amounts. Derived and total lines show in bold, and a section expands and collapses.
-03. **markers**: each month heading carries its source: a stale dot for a stale snapshot, and a month to date marker on the current month. The table header carries a stale dot while any month of the year is stale, with the number of stale months. A month with no snapshot yet shows a dash until the snapshot job runs.
+03. **markers**: each month heading carries its source: a stale dot for a stale snapshot, and a month to date marker on the current month. The table header carries a stale dot while any month of the year is stale, with the number of stale months. A month with no snapshot yet shows a dash until the snapshot job runs. The December column of the year before shows a dash with a note when that December has no snapshot in the view's reporting currency, per RM.12 of the **data model**. The year view never builds a stale month live: its stale months show their stored amounts with the stale dot.
 04. **navigation**: tapping a month heading opens PG.24 for that month and currency.
 05. **API calls**: `GET /api/statements/income?year=&currency=`, `GET /api/statements/income.csv?year=&currency=`.
 
@@ -509,7 +508,7 @@ The pages make the calls below, grouped by resource. The **api endpoints** topic
 | AC.13 | splits        | CRUD on `/splits`, templates on `/split-templates`             |
 | AC.14 | tags          | CRUD, merge, retire, balances on `/tags`                       |
 
-Every path sits under the `/api` prefix. Every call sends the session cookie, and amounts and rates travel as decimal strings in both directions.
+Every path sits under the `/api` prefix. Every call sends the session cookie, and amounts and rates travel as decimal strings in both directions. The `version=` parameter of a statement call carries the snapshot version's id, and its absence means the current version. The version number PG.29 shows is derived for display only. The **data model** names these calls by their AC id and states no paths of its own.
 
 ## Traceability
 

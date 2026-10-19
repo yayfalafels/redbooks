@@ -66,7 +66,7 @@ This doc names accounts by role and uses illustrative amounts, per LL.08 of the 
 04. **SP.04 the population** is one user's ledger. The income statement holds every income and expense entry of the user. The balance sheet holds every account in net worth. Accounts outside net worth, such as counterparties the user tracks but does not own, stay off the balance sheet, and their movements appear in [Net worth movement](#net-worth-movement).
 05. **SP.05 transfers and opening balances** never reach the income statement, per AR.09 and AR.10.
 06. **SP.06 a closed month** reads its current snapshot version, and the current month is month to date, built on request, per the financial statements milestone of the **release milestones**.
-07. **SP.07 zero lines.** Every active category, subcategory and account shows a line in each view, at 0.00 when nothing moved, per 02.FS.13. A retired one shows only in a view where its amount is non-zero.
+07. **SP.07 zero lines.** Every active category, subcategory and account shows a line in each view, at 0.00 when nothing moved, per 02.FS.13. The view adds these rows, since a snapshot stores only the items its month touches, per note 03 of the [Statement data model](#statement-data-model). A retired one shows only in a view where its amount is non-zero.
 08. **SP.08 tags** are labels on transactions and change no statement line, per AR.08 of the **accounting rules**. A pooled account shows on the balance sheet at its total balance.
 
 ## Statement data model
@@ -77,9 +77,9 @@ A statement build writes a snapshot version, per the financial statements milest
 | ----- | --------- | ------------------------------------------ | ------------- |
 | SM.01 | detail    | the ledger entries or balance of one item  | detail lines  |
 | SM.02 | total     | the sum of the lines beneath it            | summary lines |
-| SM.03 | derived   | a formula or a measure across the sections | summary lines |
+| SM.03 | derived   | a formula over lines, or a ledger measure  | summary lines |
 
-Every line of this doc is one of the three kinds.
+Every line of this doc is one of the three kinds. A derived line is a formula over other lines, such as SB.01, or a measure the build reads from the ledger with no detail line beneath it: RC.01, CT.01, CT.02, NM.02, NM.03 and NM.05. A measure line drills down to its own transactions or balances, and CK.02 does not apply to it.
 
 | id    | line                                   | kind    | key   |
 | ----- | -------------------------------------- | ------- | ----- |
@@ -91,7 +91,7 @@ Every line of this doc is one of the three kinds.
 | SL.06 | transfer rate difference of a transfer | detail  | LK.10 |
 | SL.07 | category line                          | total   | LK.03 |
 | SL.08 | section total, IS.01 to IS.05          | total   | LK.02 |
-| SL.09 | subsection total, one per account type | total   | LK.07 |
+| SL.09 | subsection total, TY.01, 02, 04 to 06  | total   | LK.07 |
 | SL.10 | NW.01 to NW.06                         | total   | LK.01 |
 | SL.11 | SB.01 to SB.05, PI.01 to PI.06         | derived | LK.01 |
 | SL.12 | TE.01 to TE.04, RC.01 to RC.03         | derived | LK.01 |
@@ -99,17 +99,20 @@ Every line of this doc is one of the three kinds.
 
 The detail lines table holds one row per detail line.
 
-| id    | column           | value                                                  |
-| ----- | ---------------- | ------------------------------------------------------ |
-| DL.01 | snapshot version | the version the line belongs to                        |
-| DL.02 | statement        | `is` or `bs`                                           |
-| DL.03 | line key         | LK.04, LK.05, LK.06, LK.08, LK.09 or LK.10             |
-| DL.04 | subcategory      | the subcategory of a subcategory line                  |
-| DL.05 | account          | the account of an account, fund or forex line          |
-| DL.06 | counter account  | the receiving account of a route or XD, DL.05 sender   |
-| DL.07 | amount           | signed, in the reporting currency                      |
-| DL.08 | account amount   | signed, in the account currency, for a foreign account |
-| DL.09 | forex inputs     | B_r, T_r and E_r for FX, R_in and R_out for XD         |
+| id    | column            | value                                                  |
+| ----- | ----------------- | ------------------------------------------------------ |
+| DL.01 | snapshot version  | the version the line belongs to                        |
+| DL.02 | statement         | `is` or `bs`                                           |
+| DL.03 | line key          | LK.04, LK.05, LK.06, LK.08, LK.09 or LK.10             |
+| DL.04 | subcategory       | the subcategory of a subcategory line, see note 02     |
+| DL.05 | account           | the account of an account, fund or forex line, note 02 |
+| DL.06 | receiving account | the receiving account of a route or XD, DL.05 sender   |
+| DL.07 | amount            | signed, in the reporting currency                      |
+| DL.08 | account amount    | signed, in the account currency, for a foreign account |
+| DL.09 | forex inputs      | B for FX, both legs for XD, the rest derived, see note |
+
+01. **DL.09** stores only the inputs that no other stored figure gives. B_r, E_r and T_r of an FX line, and R_in and R_out of an XD line, follow from them, the account line and the version's month-end rates, per the derived inputs of `statement_detail_line` in the **data model**.
+02. **DL.04 and DL.05 parents.** A subcategory line also stores the subcategory's category, and an account line the account's type, as they stood when the version ran. A category line stores its section the same way. A later move of a subcategory, or a change of a section or type, leaves every stored version laid out and totalled as it was built.
 
 The summary lines table holds one row per total and derived line.
 
@@ -122,9 +125,9 @@ The summary lines table holds one row per total and derived line.
 | SU.05 | amount           | signed, in the reporting currency |
 
 01. **one version, one month.** A snapshot version covers one month, so each line has one amount. A figure that spans months, such as a year total, a monthly average or TE.05, is a view line, computed from the current versions of the months in the view and never stored.
-02. **totals and derived lines are stored.** A stale comparison and CK.02 then run line by line on stored values, with no recomputation at read.
-03. **zero lines are stored.** Every active item has a detail row in every version, at 0.00 when nothing moved, per SP.07, so a stale comparison sees a line move from zero.
-04. **ids, not names.** A detail row names its subcategory or account by id. The view reads the current name, so a renamed category keeps its line.
+02. **totals and derived lines are stored.** A view of a version reads every figure it shows from storage, and CK.02 runs line by line on stored values. Only a stale month view also builds the month live, to show what drifted.
+03. **only touched items are stored.** A version stores a detail row for each item its month touches: a subcategory or fund with an entry, an account with an entry or a non-zero balance, and each forex line and route. An item with no row reads as 0.00, so a stale comparison sees a line move from zero by matching keys on both sides, and an unused account or subcategory stays deletable.
+04. **ids, not names.** A detail row names its subcategory or account by id. The view reads the current name, so a renamed category keeps its line. It takes each row's parent from the stored line, per note 02 of the detail lines.
 05. **month to date** builds the same two tables in memory and stores neither.
 06. the data model topic, 04.05, sets the column types, keys and constraints.
 
@@ -455,13 +458,14 @@ The opening block reconciles the two statements.
 | NM.02 | opening balances            | opening balance equity entries, see note |
 | NM.03 | movements outside net worth | see note 03                              |
 | NM.04 | change in net worth         | NM.01 + NM.02 + NM.03                    |
-| NM.05 | opening net worth           | NW.01 at the end of the month before     |
+| NM.05 | opening net worth           | NW.01 at the month before's end, note 04 |
 | NM.06 | closing net worth           | NM.05 + NM.04                            |
 
 01. **NM.02** is the sum of the opening balance equity entries of AR.10 on accounts in net worth, dated in the month. It is non-zero only in the month of an account's opening date. The opening balance derives from the account's reconciled balance point, per AR.10 and AR.11, so it changes when the point or an entry dated before the point changes.
 02. a reconciled balance point that moves changes the balances it covers. It is not a movement of the month: it rewrites history, and the snapshots it covers go stale, per the financial statements milestone of the **release milestones**.
 03. **NM.03** is the net of transfers between accounts in net worth and accounts outside it, on the net worth side, less any income and expense entries posted on accounts outside net worth. It is zero for a user with no accounts outside net worth.
-04. **NM.06** equals NW.01 of the same month exactly, per CK.03.
+04. **NM.05** is measured by the build from the ledger: every account in net worth at the end of the month before, converted at r_(N-1), so it is the sum of B_r and of the opening balances of the reporting currency accounts. It is stored on the version and never read from another month's version. It equals the stored NW.01 of the month before unless that month is stale, and a change that moves it marks that month stale too, per WF.16.
+05. **NM.06** equals NW.01 of the same month exactly, per CK.03.
 
 ### Net worth and its sections
 
@@ -491,7 +495,7 @@ This informational block shows the month's transfers that move value between bal
 | CT.03 | one line per route        | transfers between currencies, per account pair |
 | CT.04 | net cash transfers        | CT.01 + CT.02 + the CT.03 lines                |
 
-01. each line is the sum of the receiving side's reporting amounts. A route line names its sending and receiving account, and shows the amount in the sending account's currency beside the reporting amount.
+01. **signs.** CT.01 and CT.02 are net flows into their section, each leg measured at its reporting amount on the section's side: a transfer into a TY.08 or TY.07 account adds, and one out of it subtracts, so a sell reads negative and a month of equal buys and sells nets to 0.00. A route line is the sum of the received legs' reporting amounts, positive. It names its sending and receiving account, and shows the amount in the sending account's currency beside the reporting amount.
 02. **CT.01** counts transfers only. The salary inflows of RC.01 are income and show in [Retirement contributions](#retirement-contributions).
 03. a route line shows only in a month with a transfer on that route.
 04. the payment sources of a split are part of the split, and no line of this block counts them. A split's retirement fund sources reach RC.01.
@@ -519,7 +523,7 @@ FX   = E_r - B_r - T_r, which before rounding is B_N × (r_N - r_(N-1))
 
 Every entry of the month converts at r_(N-1), the rate of the opening balance, so FX is the closing balance revalued, B_N × (r_N - r_(N-1)), plus the rounding of each converted entry. An account that opens during the month is revalued the same way.
 
-06. **the transfer rate difference of one transfer** between currencies is the booked value received less the booked value sent. A payment source of a split on an account in another currency than the split's cost center is such a transfer.
+06. **the transfer rate difference of one transfer** between currencies, with both legs on accounts in net worth, is the booked value received less the booked value sent. A payment source of a split on an account in another currency than the split's cost center is such a transfer. A transfer with one leg outside net worth has no XD: NM.03 counts its net worth leg at its booked value, and the FX of that account revalues it.
 
 ```text
 R_in  = amount received × r_(N-1) of the receiving currency, rounded
@@ -531,7 +535,7 @@ XD    = R_in - R_out
 08. **XD is a forex result, not a transfer result.** The transfer entries still add nothing to net income, per AR.09. XD measures what the user gained or lost by dealing at a rate other than r_(N-1), and a transfer whose two sides share a currency has none.
 09. **both are exact by construction.** B_r is the rounded closing value of the month before, and T_r sums rounded entries, so E_r = B_r + T_r + FX to the cent with no residual. R_in and R_out are the same rounded amounts T_r sums for the two accounts, so the sum of XD closes the identity of 07 to the cent.
 10. **an account in the reporting currency** has FX of zero, since its reporting amounts equal its own. A transfer between two accounts in the reporting currency has XD of zero.
-11. **SB.05** is the sum of FX across every foreign currency account in net worth, cash and positions alike, plus the sum of XD across every transfer between currencies in the month. The balance sheet shows the same figure as its forex gain or loss line. The forex breakdown, PG.27 of the **front end pages**, shows each account's B_r, T_r, E_r, rates and FX, then each transfer's R_in, R_out, actual rate and XD, and its rows sum to the line.
+11. **SB.05** is the sum of FX across every foreign currency account in net worth, cash and positions alike, plus the sum of XD across every transfer between currencies in the month with both legs in net worth, per 06. The balance sheet shows the same figure as its forex gain or loss line. The forex breakdown, PG.27 of the **front end pages**, shows each account's B_r, T_r, E_r, rates and FX, then each transfer's R_in, R_out, actual rate and XD, and its rows sum to the line.
 12. **never posted.** FX and XD exist only in the statement build and its snapshot, per the response to requirements audit item 01.04.07 in the **release milestones**. The ledger holds no forex entry before or after a build.
 13. **the current month** converts its entries and transfers at r_(N-1), fixed before the month began, so its income statement lines and XD never move. Only its balances and FX follow today's rate until the month closes.
 14. **a change of reporting currency** rebuilds every line from the ledger with the new pair's rates. Both the opening value of a regenerated year's first month and every FX figure follow from the same rules.
@@ -543,16 +547,16 @@ The presentation view is what the statement page and the CSV export show. A buil
 | id    | row field  | value                                                 |
 | ----- | ---------- | ----------------------------------------------------- |
 | PV.01 | line key   | the key of a data model line, or of a view line       |
-| PV.02 | label      | the current name of the item, or the line's name here |
+| PV.02 | label      | the item's current name, or the line's name here      |
 | PV.03 | level      | the depth of the row in the layout                    |
 | PV.04 | parent key | the key of the row it sits under in the layout        |
 | PV.05 | row kind   | detail, total, derived or view                        |
 | PV.06 | values     | one signed amount per column of the view              |
 
-01. **PV.07 layout.** Rows follow the layout trees of [Income statement layout](#income-statement-layout) and [Balance sheet layout](#balance-sheet-layout). Detail rows sit under their category, by the category's section, or under their subsection, by the account's type, in the order note 05 of [Income statement sections](#income-statement-sections) and [Account detail](#account-detail) set.
+01. **PV.07 layout.** Rows follow the layout trees of [Income statement layout](#income-statement-layout) and [Balance sheet layout](#balance-sheet-layout). Detail rows sit under their category, by the category's section, or under their subsection, by the account's type, in the order note 05 of [Income statement sections](#income-statement-sections) and [Account detail](#account-detail) set. The category, section and type are the ones the version stored, per note 02 of the detail lines, so an older version lays out as it was built and its totals add up. Only labels follow the current names.
 02. **PV.08 one line, more than one row.** A data model line can show in both statements. SB.05 is the income statement's forex gain or loss and the balance sheet's forex gain or loss row.
 03. **PV.09 view lines** are computed by the view from the months it shows: the year total, the monthly average, TE.05 for a year or a quarter, and the rate row. They carry row kind `view` and are never stored.
-04. **PV.10 drill down** goes from a detail row to its transactions, and from a total or derived row to the rows beneath it.
+04. **PV.10 drill down** goes from a transaction-based detail row, a subcategory, fund, route or XD line, to its transactions, and from a total or formula row to the rows beneath it. An account line opens the account's ledger for the month, per WF.14.04, and the forex line opens PG.27. A measure line opens its own transactions, or for NM.05 the balance sheet of the month before.
 
 The presentation rules apply to every row of the view.
 
@@ -569,7 +573,7 @@ Each line of the data model and each row of the view carries a stable key, so a 
 
 | id    | line kind           | key                                       |
 | ----- | ------------------- | ----------------------------------------- |
-| LK.01 | derived line        | `is.` or `bs.` and the line id, `is.sb01` |
+| LK.01 | fixed line          | `is.` or `bs.` and the line id, `is.sb01` |
 | LK.02 | section total       | `is.section.<section key>`                |
 | LK.03 | category line       | `is.category.<category id>`               |
 | LK.04 | subcategory line    | `is.subcategory.<subcategory id>`         |
@@ -578,10 +582,12 @@ Each line of the data model and each row of the view carries a stable key, so a 
 | LK.07 | subsection total    | `bs.subsection.<account type>`            |
 | LK.08 | transfer route      | `bs.ct03.<sending id>.<receiving id>`     |
 | LK.09 | forex of an account | `bs.fx.<account id>`                      |
-| LK.10 | rate difference     | `bs.xd.<transaction id>`                  |
+| LK.10 | rate difference     | `bs.xd.<transfer id>`                     |
 
 01. the ids are the database ids of the user's own records, so a renamed category keeps its key.
-02. the detail and summary line tables of the [Statement data model](#statement-data-model) hold each line's other columns. The [Presentation view](#presentation-view) adds the label, level and parent of each row.
+02. **line class.** The first two parts of a key are its line class, such as `is.subcategory` or `bs.ct03`, the generic part shared by every line of its kind, and the rest names the item. A fixed line, LK.01, is a derived line or one of the net worth totals NW.01 to NW.06. It has no item, so its class is its whole key, such as `is.sb01`.
+03. **LK.07** has a seeded key for each type with a subsection: TY.01, TY.02, TY.04, TY.05 and TY.06. TY.03 has no line, and TY.07 and TY.08 total in NW.05 and NW.02 with no subsection.
+04. the detail and summary line tables of the [Statement data model](#statement-data-model) hold each line's other columns. The [Presentation view](#presentation-view) adds the label, level and parent of each row.
 
 ## Checks
 
@@ -589,18 +595,24 @@ Every statement build runs these checks. A failed check fails the build with its
 
 | id    | check                 | pass condition                                      |
 | ----- | --------------------- | --------------------------------------------------- |
-| CK.01 | rates present         | every currency's rate at both month ends            |
+| CK.01 | rates present         | every currency's final rate at both month ends      |
 | CK.02 | roll-ups              | every total equals the sum of the lines beneath it  |
 | CK.03 | book identity         | NM.06 equals NW.01, to the cent                     |
-| CK.04 | forex identity        | each account's E_r = B_r + T_r + FX, to the cent    |
+| CK.04 | forex revaluation     | each FX within rounding of B_N × (r_N - r_(N-1))    |
 | CK.05 | type coverage         | every account in net worth has a type               |
 | CK.06 | clearing at month end | every cost center at 0.00 at the month end          |
-| CK.07 | drill down            | each detail line equals the sum of its transactions |
-| CK.08 | transfer rate         | each XD = R_in - R_out, to the cent                 |
+| CK.07 | drill down            | each transaction-based line equals its transactions |
+| CK.08 | transfer rate         | the converted transfer legs total the sum of XD     |
+| CK.09 | opening rate agrees   | each r_(N-1) equals the month before's r_N          |
 
-01. **CK.01** names the missing pair and month in its message.
-02. **CK.05** holds by constraint once the data model makes the type required. The check guards a load that bypasses it.
-03. **CK.06** names each cost center that is not at 0.00 and its balance. Since no split crosses a month boundary, per AR.07 item 05, a non-zero cost center is a recording error to fix before the month builds. With every cost center at 0.00, leaving TY.03 out of NW.04 keeps every roll-up exact.
+01. **CK.01** names the missing pair and month in its message. A provisional fetched rate, fetched before the source could publish it, fails CK.01 until the rate client refetches it, per `exchange_rate` note 02 of the **data model**.
+02. **CK.02** covers the totals and the formula lines. A measure line, per the [Statement data model](#statement-data-model), has no lines beneath it, and CK.03 and CK.07 check it instead.
+03. **CK.04** FX is defined as E_r - B_r - T_r, so the check compares it with the revaluation computed directly: it passes when the two differ by no more than half a unit of the reporting currency's last decimal place for each rounded figure, E_r, B_r and each of the n converted entries, (n + 2) × 0.005 in a 2-decimal currency. A larger gap means an entry converted at the wrong rate or a balance read on the wrong date.
+04. **CK.05** holds by constraint once the data model makes the type required. The check guards a load that bypasses it.
+05. **CK.06** names each cost center that is not at 0.00 and its balance. Since no split crosses a month boundary, per AR.07 item 05, a non-zero cost center is a recording error to fix before the month builds. With every cost center at 0.00, leaving TY.03 out of NW.04 keeps every roll-up exact.
+06. **CK.07** applies to the lines built from transactions: subcategory, fund, route and XD lines, and the measure lines RC.01, CT.01, CT.02, NM.02 and NM.03. The build sums each line's transactions through the drill down query and compares the result with the line. An account line is a balance, FX has no transactions, and NM.05 is a balance, so none of them is checked here.
+07. **CK.08** compares two independent paths to the same figure. The build sums, account by account, the reporting amounts of the transfer legs it used in T_r, over every transfer between two accounts in net worth, and compares the total with the sum of the XD lines, computed per transfer. Same-currency transfers add 0.00 to both.
+08. **CK.09** compares each currency's r_(N-1) with the r_N stored by the current version of month N-1 in the same reporting currency, and names the currency and both rates in its message. It is skipped when month N-1 has no version, as in the first month of history. A run of several months builds them in date order, so each month compares with the version just written before it. A changed month-end rate of N-1 therefore reaches month N only with N-1 in the same run, per WF.16.04 of the **workflows**, and the two versions never disagree when written.
 
 ## Worked examples
 

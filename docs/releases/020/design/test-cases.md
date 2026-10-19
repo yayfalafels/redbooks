@@ -59,16 +59,16 @@ Each case id has the form `02.<silo>.<nn>`. Each case traces to a release notes 
 04. strategy rules carry their ids from the **test strategy**, such as `02.CS.03`.
 05. a feature tracker copies a case as `<F>.TC.<nn>` and keeps the catalogue id in its scope-item column. Cross-cutting cases stay in the catalogue and run in every feature's regression: 02.OWN.05, 06 and 08, 02.UI.33 and 34, 02.FX.10, 02.SEED.11 and 02.ENV.11.
 
-| id    | release notes section   | milestones      | cases                                                      |
-| ----- | ----------------------- | --------------- | ---------------------------------------------------------- |
-| RN.01 | ledger and transactions | 10              | 02.LED.06 to 20, 02.DB.07 to 15, 02.API.02 to 13           |
-| RN.02 | categories              | 10, 07, 12      | 02.DB.07, 02.API.09, 02.UI.15, 02.SEED.03, 02.MIG.03       |
-| RN.03 | multiple currencies     | 17, 10          | 02.LED.01 to 05, 11 to 16, 02.FX.01 to 11, 02.API.14 to 17 |
-| RN.04 | financial statements    | 11              | 02.FS.01 to 13, 02.UI.23 to 32, 02.E2E.03, 04              |
-| RN.05 | users and login         | 09              | 02.OWN.01 to 12, 02.DB.03, 04, 13, 02.E2E.05               |
-| RN.06 | mobile layout           | 06, FE sections | 02.UI.01 to 34, 02.ENV.14, 02.HUM.01 to 06                 |
-| RN.07 | HomeBudget history      | 07, 12          | 02.SEED.01 to 25, 02.MIG.01 to 20                          |
-| RN.08 | lessons applied         | all             | 02.ENV.01 to 15, 02.SEED.12, 13, 02.E2E.01                 |
+| id    | release notes section   | milestones      | cases                                                         |
+| ----- | ----------------------- | --------------- | ------------------------------------------------------------- |
+| RN.01 | ledger and transactions | 10              | 02.LED.06 to 20, 02.DB.07 to 15, 02.API.02 to 13              |
+| RN.02 | categories              | 10, 07, 12      | 02.DB.07, 02.API.09, 02.UI.15, 02.SEED.03, 02.MIG.03          |
+| RN.03 | multiple currencies     | 17, 10          | 02.LED.01 to 05, 11 to 16, 02.FX.01 to 11, 02.API.14 to 17    |
+| RN.04 | financial statements    | 11              | 02.FS.01 to 18, 02.DB.16 to 20, 02.UI.23 to 32, 02.E2E.03, 04 |
+| RN.05 | users and login         | 09              | 02.OWN.01 to 12, 02.DB.03, 04, 13, 02.E2E.05                  |
+| RN.06 | mobile layout           | 06, FE sections | 02.UI.01 to 34, 02.ENV.14, 02.HUM.01 to 06                    |
+| RN.07 | HomeBudget history      | 07, 12          | 02.SEED.01 to 25, 02.MIG.01 to 20                             |
+| RN.08 | lessons applied         | all             | 02.ENV.01 to 15, 02.SEED.12, 13, 02.E2E.01                    |
 
 ## Ledger and money silo
 
@@ -139,6 +139,11 @@ Protocol db. A fresh database built by the schema build command, and the databas
 | 02.DB.13 | 09.DB.02, 02.CS.06 | cross-owner references rejected                     |
 | 02.DB.14 | 10.DB.08           | records with posted history are retired             |
 | 02.DB.15 | 10.DB.09           | single-active rules are partial unique indexes      |
+| 02.DB.16 | 11.DB.03           | one current version per series                      |
+| 02.DB.17 | 11.DB.04, DM.06    | detail line key matches exactly one subtype row     |
+| 02.DB.18 | 11.DB.04, DM.06    | statement lines reject update and delete            |
+| 02.DB.19 | 09.DB.02, DM.08    | user delete cascades past statement history         |
+| 02.DB.20 | 11.DB.05, IV.12    | a write during a build marks the new version        |
 
 - **02.DB.01** input: an empty database and the schema build command, run twice. Expected: the build succeeds both times with an identical schema, and the table list equals the data model doc's table list in both directions.
 - **02.DB.02** input: insert amount `"1345.67"` SGD, `"1000"` JPY and rate `1.34567123`. Expected: reads return the same strings exactly.
@@ -154,6 +159,11 @@ Protocol db. A fresh database built by the schema build command, and the databas
 - **02.DB.12** input: list the account types and their balance sheet group. Expected: every account type has exactly one group.
 - **02.DB.13** input: `bob`'s expense referencing `alice`'s account, and `bob`'s subcategory under `alice`'s category. Expected: both rejected.
 - **02.DB.14** input: delete an account and a category that each have posted transactions, then retire them, then delete an account with none. Expected: the deletes with history are rejected, the retired records leave the active lists while their transactions keep them, and the unused account is deleted.
+- **02.DB.16** input: a series with one current version, then a second version inserted with `valid_to` null, then one with `valid_to` before its `valid_from`. Expected: both rejected, and a second series for the same user, month and currency rejected.
+- **02.DB.17** input: a detail line of class `is.subcategory` committed with no subtype row, one with rows in two subtype tables, and one whose key names another subcategory id. Expected: each commit fails on the deferred trigger.
+- **02.DB.18** input: as the app role, an `UPDATE` of a detail line amount, a `DELETE` of a summary line and an `UPDATE` of a version's `run_kind`. Expected: all three rejected, and an `UPDATE` of the version's `valid_to` accepted.
+- **02.DB.19** input: a user with accounts, subcategories, transactions and snapshot versions, then delete the user. Expected: the delete succeeds and leaves no row of the user, while a direct delete of a subcategory a line names is rejected.
+- **02.DB.20** input: start a build of June and hold it after its series lock, then commit an expense dated in June from a second session, then release the build. Expected: the expense waits for the build, the new version is marked income stale, and the changes read of the new version lists the expense.
 - **02.DB.15** input: every single-active rule the data model names. Expected: each has a partial unique index filtered to the active state, and a second active row is rejected while a second inactive row is accepted.
 
 ## Backend API silo
@@ -249,6 +259,11 @@ Protocols unit and api. Hand-built ledgers with hard-coded totals, then the seed
 | 02.FS.11 | 11.API.11           | client | population, period and incomplete period labels     |
 | 02.FS.12 | 02.CS.03            | oracle | month boundary dates                                |
 | 02.FS.13 | 02.CS.03            | oracle | month with no transactions                          |
+| 02.FS.14 | 11.API.06, CK.08    | oracle | transfer rate difference closes the book identity   |
+| 02.FS.15 | 11.API.15, CK.09    | oracle | month-end rate change forces the month before       |
+| 02.FS.16 | 11.API.15, WF.16    | oracle | foreign account edit marks the income statement     |
+| 02.FS.17 | 11.FE.13, PV.07     | oracle | older version keeps its layout after a regroup      |
+| 02.FS.18 | CK.03, CK.04        | unit   | build checks fail with their named cause            |
 
 - **02.FS.01** input: a hand-built June 2026 ledger with Food: Groceries `"-120.00"` and Dining `"-45.50"`, Transport: Taxi `"-30.00"`, and Salary `"5000.00"`. Expected: Food `"-165.50"`, Transport `"-30.00"`, expenses `"-195.50"`, income `"5000.00"`, net `"4804.50"`.
 - **02.FS.02** input: the seed over the snapshot period. Expected: each subcategory expense total equals its value in `expected/category-totals.json`, compared in each account's own currency, before statement conversion, with the sign rule the fixture states. Also traces 07.CK.09.
@@ -258,11 +273,16 @@ Protocols unit and api. Hand-built ledgers with hard-coded totals, then the seed
 - **02.FS.06** input: a USD account holding `"1000.00"` USD, rate `1.34000` on 2026-05-31 and `1.35000` on 2026-06-30, and a USD expense of `"100.00"` on 2026-06-15. Expected: opening `"1340.00"` SGD, expense `"-134.00"` SGD at the May month-end rate, closing `"1215.00"` SGD, forex gain `"9.00"` SGD, the closing balance of USD 900.00 revalued. With no expense, the gain is `"10.00"`. The ledger holds no forex entry before or after the statement is built.
 - **02.FS.07** input: the 02.FS.01 ledger with the reporting currency switched from SGD to USD, and a USD.SGD month-end rate of `1.35000` on 2026-05-31, the rate June entries convert at. Expected: every line converted, such as Food `"-122.59"` USD, and a user rate recorded for 2026-05-31 replaces the fetched one in the conversion.
 - **02.FS.08** input: the 02.LED.11 transfer in the seed period. Expected: the ledger keeps `"-1000.00"` USD and `"1345.67"` SGD, and the balance sheet converts the USD balance at the month-end rate.
-- **02.FS.09** input: every line of every month view in the seed. Expected: the drill down returns transactions whose amounts sum exactly to the line.
+- **02.FS.09** input: every transaction-based line of every month view in the seed: subcategory, fund, route and XD lines, and RC.01, CT.01, CT.02, NM.02 and NM.03. Expected: the drill down returns transactions whose amounts sum exactly to the line. An account line opens the account's ledger for the month, whose closing balance equals the line.
 - **02.FS.10** input: the CSV export of each year view, each month view and the transaction list. Expected: the statement CSVs equal the JSON response with the presentation rule applied, so expense lines read as positive amounts, and the transaction list CSV holds the signed amounts of its response, all as decimal strings.
 - **02.FS.11** input: the June 2026 and July 2026 statements with the clock pinned at 2026-07-15. Expected: each statement names its user, its accounts in scope and its period, and July is marked incomplete while June is not.
 - **02.FS.12** input: expenses `"-1.00"` on 2026-06-01, `"-2.00"` on 2026-06-30 and `"-4.00"` on 2026-07-01. Expected: June `"-3.00"`, July `"-4.00"`.
 - **02.FS.13** input: a ledger with transactions in May and July and none in June. Expected: June income statement lines are `"0.00"`, and June balances carry the May closing balances.
+- **02.FS.14** input: the SX.06 transfer of the **financial statements design**, then the same transfer to an account outside net worth. Expected: XD `"10.00"`, FX `"10.00"`, net income `"20.00"` and CK.03 passes. The second has no XD line, NM.03 is `"-1330.00"`, and CK.03 still passes.
+- **02.FS.15** input: June and July 2026 snapshots, then a user rate for 2026-06-30, then a re-run of July alone. Expected: June's balance sheet and the income statements of June and July are marked stale, the July re-run fails CK.09, and a re-run of June and July together succeeds.
+- **02.FS.16** input: May and June snapshots in SGD, then an edit to a USD account's expense dated in May, after its point. Expected: the balance sheets of May and June and the income statements of May and June are marked stale, and June's re-run moves FX by the change times the rate difference.
+- **02.FS.17** input: a June snapshot, then a subcategory moved to another category and an account's type changed. Expected: the June version still shows the subcategory and account under their old parents, every total equals the sum of its lines, and the labels show current names.
+- **02.FS.18** input: a build with one entry converted at r_N in place of r_(N-1), and a build with a transfer leg dropped from T_r. Expected: the first fails CK.04 and the second CK.08, each with its named cause, and no version is written.
 
 ## Frontend silo
 
@@ -448,7 +468,7 @@ Milestone 12. Protocols unit, db and reference, against account `01` fixture row
 | 02.MIG.10 | 12.CK.10               | direct      | job reaches a terminal status with progress  |
 | 02.MIG.11 | 02.CS.06               | direct      | migration touches only the target user       |
 | 02.MIG.12 | DQ.20                  | direct      | rows outside the scope are skipped, reported |
-| 02.MIG.13 | DQ.33                  | direct      | retired accounts are not migrated            |
+| 02.MIG.13 | DQ.33                  | direct      | dormant accounts take their treatment        |
 | 02.MIG.14 | DQ.22                  | oracle      | account amounts come from AccountTrans       |
 | 02.MIG.15 | DQ.23, AR.12           | oracle      | foreign expense on a SGD account keeps both  |
 | 02.MIG.16 | DQ.24, AR.12           | oracle      | transfer between currencies takes both sides |
@@ -464,19 +484,19 @@ Milestone 12. Protocols unit, db and reference, against account `01` fixture row
 - **02.MIG.05** input: account `01` fixture rows that overlap the account `02` seed in accounts, categories and transactions. Expected: overlapping records match by the match key, and no duplicate account, category or transaction is created.
 - **02.MIG.06** input: two identical expenses on one day in the fixture rows. Expected: two records, and a rerun keeps two.
 - **02.MIG.07** input: migrate the same fixture rows twice. Expected: zero records added on the second run, and every balance and total unchanged.
-- **02.MIG.08** input: fixture rows from 2017-01-01 where every expense runs through the cost center, per CE.04 of the **accounting rules**. Expected: the account `01` cost centers of each currency map onto that currency's one cost center, whose balance at every month end equals the sum of their HomeBudget balances from AccountTrans, and it is `"0.00"` on 2026-05-23.
+- **02.MIG.08** input: fixture rows from 2020-01-01 where every expense runs through the cost center, per CE.04 of the **accounting rules**. Expected: the account `01` cost centers of each currency map onto that currency's one cost center, whose balance at every month end equals the sum of their HomeBudget balances from AccountTrans, and it is `"0.00"` on 2026-05-23.
 - **02.MIG.09** input: the migrated fixture user. Expected: balances and category totals equal the account `01` reference figures from the data review, through the reference checks.
 - **02.MIG.10** input: a migration with a fault injected at a known row. Expected: the job ends in a failed status with the original exception recorded, the rows before the fault stay committed, and a rerun adds only the rest.
 - **02.MIG.11** input: migrate into `alice`. Expected: `bob`'s row counts and balances unchanged.
-- **02.MIG.12** input: fixture rows dated 2016-12-31, 2017-01-01, 2026-05-23 and 2026-05-24, including a recurring entry. Expected: the two rows inside the scope load, and the other two are skipped and counted under DQ.20 in the report.
-- **02.MIG.13** input: an account with no activity from 2017-01-01 to 2026-05-23 and a small balance at the cutoff. Expected: it is not created, the report lists it under DQ.33, and no migrated row references it.
+- **02.MIG.12** input: fixture rows dated 2019-12-31, 2020-01-01, 2026-05-23 and 2026-05-24, including a recurring entry. Expected: the two rows inside the scope load, and the other two are skipped and counted under DQ.20 in the report.
+- **02.MIG.13** input: four accounts with no activity from 2020-01-01 to 2026-05-23: one at `"0.00"`, a THB cash wallet at THB `"400.00"` and a KRW cash wallet at KRW `"24380.00"`, and a SGD stored-value wallet at `"13.00"`. Expected: the zero account is not created. The two cash wallets are not created, and the pooled foreign cash wallet in SGD carries a reconciled point on 2020-01-01 equal to the sum of their balances at the 2019-12-31 month-end rates, each rounded half up. The stored-value wallet is created with a point of `"13.00"` on 2020-01-01, a SC.17 write-off expense of `"-13.00"` dated 2020-01-01, a balance of `"0.00"` from then on, and a retired status. The report lists each account under DQ.33 with its treatment.
 - **02.MIG.14** input: an expense on a USD account with `amount` `"13.40"`, `currency` USD, `currencyAmount` `"10.00"` and an AccountTrans amount of `"10.00"`. Expected: the account entry is USD `"-10.00"`.
 - **02.MIG.15** input: an expense on a SGD account with AccountTrans amount `"135.00"`, `currency` USD and `currencyAmount` `"100.00"`. Expected: SGD `"-135.00"` on the account and the category, with nominal USD `"100.00"` and rate `1.35` kept on the transaction.
 - **02.MIG.16** input: a USD to SGD transfer with AccountTrans out `"100.00"` and in `"135.00"`. Expected: USD `"-100.00"` on the sender, SGD `"135.00"` on the receiver and a derived rate of `1.35`.
-- **02.MIG.17** input: an account whose own point is dated 2014-12-01, with a HomeBudget balance of `"250.00"` at the end of 2016-12-31. Expected: the migrated account carries a reconciled point of `"250.00"` on 2017-01-01, and its balance at the cutoff equals the account `01` reference figure.
+- **02.MIG.17** input: an account whose own point is dated 2014-12-01, with a HomeBudget balance of `"250.00"` at the end of 2019-12-31. Expected: the migrated account carries a reconciled point of `"250.00"` on 2020-01-01, and its balance at the cutoff equals the account `01` reference figure.
 - **02.MIG.18** input: a zero-amount expense, a negative expense and a negative transfer. Expected: the zero row is skipped and reported, the negative expense loads as a refund, and the negative transfer loads as a positive transfer in the reverse direction.
 - **02.MIG.19** input: a paired account whose last account `01` point is `"1000.00"` on 2026-03-13, with account `01` records to 2026-05-23, and whose account `02` point is `"1200.00"` on 2026-05-24. Expected: after the migration the account carries the 2026-03-13 point and no 2026-05-24 point, its balance runs through both histories from that point, and the load report shows the open reconcile scope from 2026-03-13.
-- **02.MIG.20** input: a counterparty and a loan with `includeAccount = 'N'` and activity in the scope. Expected: both migrate, the counterparty outside net worth and the loan as a liability, and net worth excludes the counterparty.
+- **02.MIG.20** input: a counterparty with `includeAccount = 'N'` and activity in the scope. Expected: it migrates outside net worth, and net worth excludes it.
 
 ## End-to-end tier
 

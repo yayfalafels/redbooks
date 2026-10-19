@@ -2,17 +2,6 @@
 
 This document names every data source, store and output of RedBooks `0.2.0`, and the flow that moves data between them for each of the **workflows**. It is design topic 04.02 of the **release milestones**. The **data model** defines the tables inside the database store, and the **front end pages** call the flows that serve each page.
 
-## Summary
-
-01. **one database is the single store of record.** The PostgreSQL database holds users and their settings, currencies, rates, accounts, categories, ledger entries, transaction records, the ledger change log and the statement snapshots. Balances, totals and month to date statements are computed from it on request.
-02. **closed months are stored as snapshot versions.** A snapshot holds both statements for one user, month and reporting currency. A re-run adds a version and closes the one before, as a slowly changing dimension of type 2, and every report reads the current version. The snapshot job generates each closed month once, on the 1st in the user's timezone or on the next start after it.
-03. **every ledger write records a change and marks snapshots stale.** The ledger change log holds the before and after of each write, so a stale snapshot can show its changes.
-04. **data enters from eight sources.** The user's entries in the web app, the OAuth provider's identity claims, the rate API's currency list and rates, the HomeBudget account `02` database through its dated snapshot in `data/`, the account `01` database, the `.env` settings file, the fetched legacy mapping and the account map.
-05. **every ledger write runs through the ledger service in one database transaction.** Expenses, income, transfers, splits, opening balances, the seed load and the migration all call it, so every path into the ledger enforces the same invariants, per LL.16 of the **lessons learned**.
-06. **a rate is fetched once and stored.** The rate client fetches a pair and date the store lacks, stores it with its source, and every later request reads the store. A user rate sits next to the fetched one and wins in every conversion.
-07. **outputs are pages, JSON, CSV files and reports.** The web app renders API responses. CSV exports are written to a local export folder on the host and downloaded to the device. The seed load, the migration and the validation utilities write reports and logs to uncommitted locations.
-08. **personal data stays out of git.** The snapshot, the seed, the database, backups, exports, logs and the migration reports live in gitignored locations. Committed fixtures carry hypothetical names only, per LL.08 of the **lessons learned**.
-
 ## Contents
 
 - [Summary](#summary)
@@ -25,6 +14,17 @@ This document names every data source, store and output of RedBooks `0.2.0`, and
 - [Flow rules](#flow-rules)
 - [Personal data locations](#personal-data-locations)
 - [Traceability](#traceability)
+
+## Summary
+
+01. **one database is the single store of record.** The PostgreSQL database holds users and their settings, currencies, rates, accounts, categories, ledger entries, transaction records, the ledger change log and the statement snapshots. Balances, totals and month to date statements are computed from it on scheduled and on-demand basis.
+02. **closed months are stored as snapshot versions.** A snapshot holds both statements for one user, month and reporting currency. A re-run adds a version and closes the one before, as a slowly changing dimension of type 2, and every report reads the current version. The snapshot job generates each closed month once, on the 1st in the user's timezone or on the next start after it.
+03. **every ledger write records a change and marks snapshots stale.** The ledger change log holds the before and after of each write, so a stale snapshot can show its changes.
+04. **data enters from multiple sources.** The user's entries in the web app, the OAuth provider's identity claims, the rate API's currency list and rates, the HomeBudget account `02` database through its dated snapshot in `data/`, the account `01` database, the `.env` settings file, the fetched legacy mapping and the account map.
+05. **every ledger write runs through the ledger service in one database transaction.** Expenses, income, transfers, splits, opening balances, the seed load and the migration all call it, so every path into the ledger enforces the same invariants, per LL.16 of the **lessons learned**.
+06. **a rate is fetched once and stored.** The rate client fetches a pair and date the store lacks, stores it with its source, and every later request reads the store. A rate fetched before the source could publish it is provisional and refetched until it is final, per `exchange_rate` note 02 of the **data model**. A user rate sits next to the fetched one and wins in every conversion.
+07. **outputs are pages, JSON, CSV files and reports.** The web app renders API responses. CSV exports are written to a local export folder on the host and downloaded to the device. The seed load, the migration and the validation utilities write reports and logs to uncommitted locations.
+08. **personal data stays out of git.** The snapshot, the seed, the database, backups, exports, logs and the migration reports live in gitignored locations. Committed fixtures carry hypothetical names only, per LL.08 of the **lessons learned**.
 
 ## References
 
@@ -124,7 +124,7 @@ flowchart LR
     02. **currency**: the currency catalog, each user's currencies, the reporting currency setting, and the exchange rates with their source, fetched or user.
     03. **books**: accounts with their currency, their in net worth setting and, for an account in net worth, their account type, the current reconciled balance point of each account with the earlier points it replaced, categories with their kind and income statement section, subcategories, and tags with their retire flag.
     04. **ledger**: ledger entries, signed by their contribution to net worth, per AR.01 of the **accounting rules**, the expense, income, transfer and split records that own them, the split templates, each transaction's tags, and the ledger change log.
-    05. **statements**: snapshot versions, each in the series of its user, month and reporting currency and unique by its series and valid from time, with their version number, validity period, current flag, run kind and stale flags, the detail lines and summary lines of both statements per the statement data model of the **financial statements design**, the rates each snapshot used, and the snapshot job runs.
+    05. **statements**: snapshot versions, each in the series of its user, month and reporting currency and unique by its series and valid from time, with their validity period, current flag, run kind and stale flags, the detail lines and summary lines of both statements per the statement data model of the **financial statements design**, the rates each snapshot used, and the snapshot job runs.
     06. **schema**: the migration head, once versioned forward migrations start before the account `01` migration.
 02. **ST.02** the seed load writes the fixtures from the **snapshot** files directly, never from the database, so a reference check compares two independent paths.
 03. **ST.04** the export folder is the local file storage of the **release notes**. Release `0.3.0` moves it to S3 behind the same export service.
@@ -213,8 +213,8 @@ An edit replaces the record's fields and its ledger entry in one database transa
 
 01. a closed month reads the current snapshot version for the user, month and reporting currency. A year view reads the current version of each closed month in one currency, and the month to date run for the current month.
 02. the current month is a month to date run, built on request and never stored.
-03. a stale snapshot is also built live, and the response carries each line's snapshot amount, current amount and difference.
-04. the drill down for a line returns the records that sum to its current amount.
+03. a stale month view is also built live, and the response carries each line's snapshot amount, current amount and difference. A year view returns the stored amounts with their stale markers and builds no month live, so one back-dated edit that marks years of balance sheets stale costs one build per month view opened.
+04. the drill down for a transaction-based line returns the records that sum to its current amount, per PV.10 and CK.07 of the **financial statements design**.
 
 **Statement build.** DF.11, DF.16 and DF.18 build statements with one builder from the ledger, the category model, a reporting currency and the stored rates.
 
@@ -223,8 +223,9 @@ An edit replaces the record's fields and its ledger entry in one database transa
 03. **balance sheet.** The build computes each account's balance at the month end, converts it, groups accounts in net worth by account type into subsections and sections, sums net worth, and computes the net worth movement and the net cash transfers.
 04. **forex gain or loss.** The build computes the translation gain or loss of each foreign currency account and the transfer rate difference of each transfer between currencies. Their sum is the forex gain or loss line. It is stored in a snapshot like any other line and never posted to the ledger.
 05. **output.** The build writes the detail lines and the summary lines of the statement data model, and runs the checks of the **financial statements design**. A failed check fails the build with its named cause.
-06. **rates.** Every month-end rate the build needs, for the month and the month before, that the store lacks is fetched through DF.04 before the build runs.
+06. **rates.** Every month-end rate the build needs, for the month and the month before, that the store lacks or holds only provisionally is fetched through DF.04 before the build runs, per `exchange_rate` note 02 of the **data model**.
 07. month boundaries follow the user's timezone setting.
+08. **isolation.** A build takes the user's exclusive advisory lock and its series lock before it reads anything, and every DF.17 write takes the shared lock, so no write lands between a build's reads and its commit, per `statement_series` note 03 of the **data model**.
 
 The **financial statements design** defines every line, formula and check.
 
@@ -238,9 +239,9 @@ The **financial statements design** defines every line, formula and check.
 04. it posts every expense, income and transfer dated on or before the snapshot date through the ledger service, as records of their own kind with no tags, since account `02` holds no tags, with each account-side amount from AccountTrans. The split builder reconstructs a sample of the cost center groups as splits, per MR.14 of the **data migration**, and posts them through DF.21. A transfer between currencies takes both amounts from AccountTrans and derives the rate. The rules of the **homebudget data review** decide every skipped or changed row.
 05. it fetches and stores the USD to SGD rate for every month end the statements of the loaded months need, through DF.04.
 06. the fixture builder writes the expected-value fixtures to ST.02 from the snapshot with plain SQL, without RedBooks code, per the expected-value oracles of the **homebudget data review**.
-07. it generates a snapshot of every month it loaded through DF.16, with the run kind migration.
+07. it generates a snapshot of every month it loaded through DF.16, with the run kind migration, then re-runs through DF.18 every month the load left stale, oldest first, with the same run kind.
 
-**DF.14 account `01` migration.** The migration reads DS.05 for the rows of its scope, maps each account `01` subcategory onto its RedBooks subcategory through DS.07, per the **data migration**, takes each account's type from DS.08, and builds the match key for each record from its HomeBudget primary key. Each account held in both accounts resets its reconciled balance point to its last account `01` point. The account `01` cost centers of each currency map onto the user's one cost center of that currency, and their history loads as the transfers and expenses it holds, never grouped into splits, per AR.07 item 07. A dry run writes only the report. An opted-in run first writes a backup to ST.03, then upserts each account, category, transaction and transfer through the ledger service, committing progress in batches and recording its status. It then generates a snapshot of every month it loaded through DF.16, with the run kind migration, which closes any earlier version of those months. Identical transactions on the same day keep their own primary keys. A second run adds zero records.
+**DF.14 account `01` migration.** The migration reads DS.05 for the rows of its scope, maps each account `01` subcategory onto its RedBooks subcategory through DS.07, per the **data migration**, takes each account's type from DS.08, and builds the match key for each record from its HomeBudget primary key. Each account held in both accounts resets its reconciled balance point to its last account `01` point. The account `01` cost centers of each currency map onto the user's one cost center of that currency, and their history loads as the transfers and expenses it holds, never grouped into splits, per AR.07 item 07. A dry run writes only the report. An opted-in run first writes a backup to ST.03, then upserts each account, category, transaction and transfer through the ledger service, committing progress in batches and recording its status. It then generates a snapshot of every month it loaded through DF.16, with the run kind migration, which closes any earlier version of those months. A reset balance point or an earlier phase moves balances in months already built, so the run ends by re-running every month left stale, oldest first, which also keeps CK.09 in order. Identical transactions on the same day keep their own primary keys. A second run adds zero records.
 
 **DF.15 reference checks.** The validation utilities read balances, the migration snapshots' statement totals and transfer amounts from the database through the services, read the expected values from ST.02, and write one record per check to OUT.04.
 
@@ -248,13 +249,15 @@ The **financial statements design** defines every line, formula and check.
 
 **DF.17 change log and stale marking.** Inside the database transaction of each ledger, rate, reconciled balance point, account or category write, the ledger service:
 
-01. writes a change log row with the record kind and id, the change kind, the before and after values, the dates it touches and the change time.
+01. takes the user's shared advisory lock, so a build in progress finishes first.
 02. marks the current income statement snapshot of each month the write touches stale.
 03. marks the current balance sheet snapshots stale by where the write falls against its account's reconciled balance point: the month of a write dated after the point and every later month, or every month that ends before the date of a write dated before the point.
+04. on an account in a currency other than a snapshot's reporting currency, marks that snapshot's income statement wherever 03 marks its balance sheet, since the forex gain or loss follows the account's balances.
+05. writes a change log row with the record kind and id, the change kind, the before and after values, the dates, accounts and subcategories it touches, the snapshots of 02 to 04 by statement, and the change time.
 
-A rate write touches statements only on a month-end date. The month-end rate of a month touches the balance sheet of that month and every later month, and the income statements of that month and the next.
+A rate write touches statements only on a month-end date. The month-end rate of a month touches the balance sheet of that month and every later month, and the income statements of that month and the next. A change of an account's type or in net worth setting touches both statements, per WF.16.
 
-The write's response lists every snapshot the write marked stale, by month and statement, so the app can prompt for a re-run, per WF.10.06. The snapshot changes page reads the change log rows for a month that are newer than the snapshot's run time. For the balance sheet, it reads every row dated on or before the month end.
+The write's response lists every snapshot the write marked stale, by month and statement, so the app can prompt for a re-run, per WF.10.06. The snapshot changes page reads the change log rows that list the snapshot for the statement shown, so a write dated after the month end that moves its balances is listed too.
 
 > **implementation decision**: stale marking writes a flag at change time, so a page shows a stale marker without rebuilding the month. The change log holds the before and after of each write, which is the only way to show a deleted or edited transaction after the fact. It also records history that statement reconciliation can use in `0.4.0`.
 
@@ -267,7 +270,7 @@ The write's response lists every snapshot the write marked stale, by month and s
 **DF.21 split write.** The router validates the split and passes it to the ledger service, which in one database transaction:
 
 01. checks that every account, subcategory and currency belongs to the user, and that the payment sources less the category lines come to 0.00 in the split's currency, per AR.15 of the **accounting rules**.
-02. finds the user's cost center for the split's currency, and creates it on the first split in that currency.
+02. finds the user's cost center for the split's currency, and creates it on the first split or split template in that currency.
 03. writes the split record, then one transfer per payment source between its account and that cost center, through the rules of DF.09, with its rate through DF.04 for an account in another currency, and one expense or income entry per category line on the cost center, through the rules of DF.08. Each transfer and entry references the split and stores its own tags.
 04. runs DF.17 for every date the split touches.
 

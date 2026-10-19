@@ -9,6 +9,8 @@ This doc describes how the HomeBudget history moves into RedBooks: the account `
 - [Migration runs](#migration-runs)
   - [Account 02 seed](#account-02-seed)
   - [Account 01 migration](#account-01-migration)
+  - [Migration phases](#migration-phases)
+- [Migration irregularities](#migration-irregularities)
 - [Account mapping](#account-mapping)
 - [Category mapping](#category-mapping)
   - [Mapping rules](#mapping-rules)
@@ -25,6 +27,8 @@ This doc describes how the HomeBudget history moves into RedBooks: the account `
 03. **account 01 maps through the legacy workbooks in one hop.** The legacy two-stage mapping, HomeBudget category to GL code to statement line, collapses into one rule per source subcategory, from source subcategory to RedBooks subcategory.
 04. **every account takes a RedBooks account type.** The HomeBudget type is a source attribute only. An account `01` account takes its type from the legacy account registry, and an account `02` account from its account `01` pair or from its kind.
 05. **every load reports.** Each row loads, is skipped as already present, or is listed in the load report with the rule that handled it.
+06. **the account 01 migration runs newest year first.** It migrates and reconciles 2026, then 2025. How 2020 to 2024 load is decided after 2025 closes, per [Migration phases](#migration-phases).
+07. **every known irregularity is resolved at migration time.** The [Migration irregularities](#migration-irregularities) inventory lists each source irregularity and balance difference with the phase that resolves it.
 
 ## References
 
@@ -40,6 +44,7 @@ This doc describes how the HomeBudget history moves into RedBooks: the account `
 - **fetch script**: `scripts/fetch_legacy_mapping.py`
 - **legacy mapping**: `data/legacy-mapping/`, gitignored, holding the fetched `cat_map`, `fin_expense_cat_map` and `accounts` rows
 - **review outputs**: `data/homebudget-data-review/`, gitignored, holding the real-name key for every role id and the account `01` reference figures
+- **legacy statement files**: `data/financial-statements/`, gitignored, the legacy income statement and balance sheet CSV of each year from 2020 to 2026, the 2026 pair dated 2026-03-29
 
 This doc names accounts by role and role id, per LL.08 of the **lessons learned**. Project names and the real-name key stay in the **review outputs**.
 
@@ -55,7 +60,7 @@ The seed milestone of the **release milestones** owns this load.
 04. **MR.04 categories.** Each account `02` category and subcategory loads as a RedBooks category and subcategory, per [Account 02 categories](#account-02-categories). An unmapped account or subcategory fails the load with its name, per 02.SEED.03.
 05. **MR.05 records.** Account `02` holds no tags, and its splits are cost center groups rather than split records. Every expense, income record and transfer loads as a record of its own kind with no tags under the sign translation and the account `02` data quality rules of the **homebudget data review**, with its account `02` match key, except the groups the split builder of MR.14 reconstructs.
 06. **MR.06 statements.** The load generates a statement snapshot for every month it loads.
-07. **MR.14 split builder.** Account `02` uses its cost center only for splits, so each transfer into it, the expenses booked on it and the transfers out that return it to zero form one split group, per DQ.14 of the **homebudget data review** for groups whose records fall on two dates. The split builder reconstructs a sample of these groups as split records: the transfer in becomes a payment source paid from its account, each expense a category line, and each transfer out a payment source received into its account. Each reconstructed split keeps every account entry at its AccountTrans amount, so balances are unchanged, and the seed then holds a split of every shape the samples cover, including one with two payment sources. Account `01` routed every expense through the cost center, so a split group there cannot be told apart from a one-to-one expense, and the migration reconstructs none.
+07. **MR.14 split builder.** Account `02` uses its cost center only for splits, so each transfer into it, the expenses booked on it and the transfers out that return it to zero form one split group, per DQ.14 of the **homebudget data review** for groups whose records fall on two dates. The split builder reconstructs a sample of these groups as split records: the transfer in becomes a payment source paid from its account, each expense a category line, and each transfer out a payment source received into its account. The builder samples only groups whose records fall in one calendar month, per IV.13, and the seed load fails on any account `02` group that crosses a month end, since its cost center would miss 0.00 at that month end and fail CK.06. Each reconstructed split keeps every account entry at its AccountTrans amount, so balances are unchanged, and the seed then holds a split of every shape the samples cover, including one with two payment sources. Account `01` routed every expense through the cost center, so a split group there cannot be told apart from a one-to-one expense, and the migration reconstructs none.
 
 ### Account 01 migration
 
@@ -63,11 +68,67 @@ The homebudget account 01 migrate milestone of the **release milestones** owns t
 
 01. **MR.07 versioned migrations first.** The working database moves to versioned forward migrations, so it keeps its data across every later schema change.
 02. **MR.08 opt-in and backup.** One command migrates the history into a user. It refuses to write without a second opt-in, and backs up the working database first.
-03. **MR.09 scope.** The migration loads the rows dated 2017-01-01 to 2026-05-23, and leaves out the retired accounts, per DQ.20 and DQ.33 of the **homebudget data review**.
+03. **MR.09 scope.** The migration loads the rows dated 2020-01-01 to 2026-05-23 at most, per DQ.20 of the **homebudget data review**, in the phases of [Migration phases](#migration-phases). The scope starts on 2020-01-01 because every account `01` cost center holds 0.00 at every month end from there on, per DQ.31, so CK.06 of the **financial statements design** holds for every migrated month.
 04. **MR.10 reset paired points.** Each account held in both accounts resets its reconciled point to its last account `01` point, and the reconcile scope runs from there to the next reconciliation, per DQ.38 and task 12.02.
 05. **MR.11 accounts and categories.** Each account takes its type, per [Account mapping](#account-mapping). Each source subcategory maps to one RedBooks subcategory, per [Account 01 subcategories](#account-01-subcategories), and the mapping report lists any it could not map.
 06. **MR.12 upsert.** Every record matches by its account `01` match key. A matched record is skipped, an unmatched one is added, and identical records on one day load separately. A second run adds nothing.
 07. **MR.13 checks.** The one cost center of each currency matches the sum of the HomeBudget balances of the account `01` cost centers mapped onto it, at every month end in the scope. Balances and category totals match the account `01` reference figures. The load generates a statement snapshot for every month it loads.
+08. **MR.15 dormant accounts.** An account with no activity in the scope takes the treatment of DQ.33 by its balance: left out at 0.00, folded into the SGD pooled foreign cash wallet as a foreign cash wallet, migrated and written off to SC.17 loss on the start date of the earliest loaded phase as a small balance, or left out as the mortgage account closed before the scope. The report lists each dormant account with its treatment.
+
+### Migration phases
+
+The migration loads one phase at a time, newest year first, so the months the user reports on now are reconciled first. A phase closes only when every irregularity of its years is resolved and its checks pass, and the next phase starts after it.
+
+| id    | phase     | rows                     | expenses | income | transfers | status        |
+| ----- | --------- | ------------------------ | -------- | ------ | --------- | ------------- |
+| MP.01 | 2026      | 2026-01-01 to 2026-05-23 | 506      | 24     | 459       | first         |
+| MP.02 | 2025      | 2025-01-01 to 2025-12-31 | 1,355    | 89     | 1,313     | second        |
+| MP.03 | 2020-2024 | 2020-01-01 to 2024-12-31 | 4,321    | 582    | 3,958     | decided later |
+
+01. **the same rules in every phase.** Each phase loads its rows through MR.07 to MR.15 and upserts by match key, so a later phase adds only its own rows and a rerun of a phase adds nothing.
+02. **an opening point at the phase start.** An account whose current reconciled point predates the earliest loaded phase takes a point on that phase's start date, equal to its HomeBudget balance at the end of the day before, as DQ.40 of the **homebudget data review** sets for the scope start. A later phase that loads an earlier year replaces that point with one on its own start date. Both come from HomeBudget, so every balance from the old start date on stays the same. An account whose current point falls inside the loaded years keeps it, as the paired accounts of MR.10 keep their 2026 points.
+03. **accounts with no rows in a phase.** An account with activity elsewhere in the scope and none in the loaded years migrates with its opening point only. The dormant treatments of MR.15 date their points and write-offs on the earliest loaded phase's start date, 2026-01-01 in MP.01, and move back with each phase.
+04. **phase checks.** Each month of the phase passes CK.01 to CK.09 of the **financial statements design**. Its net income and closing net worth equal the **legacy statement files** figures for the month, less the legacy reconcile error row, and each account balance at the phase's last month end equals the account `01` reference figure. A difference that remains is an irregularity, resolved before the phase closes.
+05. **MP.01 meets the seed.** The account `02` seed holds the records from 2026-05-24, so MP.01 joins the two histories at the cutoff and runs the reconcile bridging of MR.10.
+06. **the 2026 reconcile window stays open past MP.01.** The paired accounts' balances run from their last account `01` points in March 2026 to the 2026 reconciliation, which starts in October at the earliest and most likely in November or December. MP.01 closes with that window open: its checks hold every month the window does not cover, and the reconciliation settles the paired accounts' difference, MI.01.
+07. **MP.03 is decided after MP.02 closes.** The choice is between loading 2020 to 2024 under the same rules, with the irregularities of MI.12 to MI.15 resolved first, and starting the books on 2025-01-01 with the MP.02 opening points only.
+
+## Migration irregularities
+
+This inventory lists every known irregularity and balance difference in the account `01` sources that the migration resolves, each with the phase that resolves it. The **homebudget data review** holds the counts and rules of the DQ issues, and the **legacy statement files** hold the legacy figures. A row closes when its resolution is applied and the phase checks pass.
+
+| id    | phase | irregularity                                                 | resolution path          |
+| ----- | ----- | ------------------------------------------------------------ | ------------------------ |
+| MI.01 | MP.01 | 9 paired accounts' cutoff balances differ from account `02`  | 2026 reconciliation      |
+| MI.02 | MP.01 | 27 expenses on one 2026 project subcategory have no mapping  | task 12.01               |
+| MI.03 | MP.01 | legacy reconcile error of 158 in 2026-01 and 17,893 in 02    | trace before MP.01 close |
+| MI.04 | MP.01 | legacy 2026 statements hold actuals to 2026-03 only          | reference figures only   |
+| MI.05 | MP.01 | May 2026 splits across account `01` and account `02`         | MR.10 bridging           |
+| MI.06 | MP.01 | 4 identical transfer rows on one day                         | DQ.30, confirm each      |
+| MI.07 | MP.01 | dormant accounts with a balance                              | MR.15                    |
+| MI.08 | MP.01 | mortgage account holds a stale USD 4,205.42                  | left out, reported       |
+| MI.09 | each  | clearing categories Balancing, Reimbursable, AM.44 and AM.45 | task 12.01               |
+| MI.10 | MP.02 | legacy reconcile error of -7,039 in 2025-09 and 7,004 in 10  | trace before MP.02 close |
+| MI.11 | MP.02 | 6 identical expense rows and 8 identical transfer rows       | DQ.30, confirm each      |
+| MI.12 | MP.03 | legacy 2023 income statement and balance sheet disagree      | decided with MP.03       |
+| MI.13 | MP.03 | 36 expenses whose `Expense.amount` differs, 2020 to 2023     | DQ.22                    |
+| MI.14 | MP.03 | legacy reconcile errors up to 1,574 a month in 2024          | decided with MP.03       |
+| MI.15 | MP.03 | 11 accounts whose current point predates 2020-01-01          | DQ.40, phase start point |
+
+01. **MI.01** for the 9 accounts held in both with a non-zero balance, the account `01` balance on 2026-05-23 differs from the account `02` opening point, per DQ.38 and summary item 10 of the **homebudget data review**. MP.01 resets each to its last account `01` point, mostly from February or March 2026. The reconcile window runs from March 2026 to the 2026 reconciliation, which starts in October at the earliest and most likely in November or December, and the reconciliation settles the difference, per phase rule 06.
+02. **MI.02** the `cat_map` region covers every in-scope expense except these 27, per the account `01` mapping of the **homebudget data review**. Task 12.01 maps the subcategory before MP.01 loads.
+03. **MI.03** the legacy balance sheet's reconcile error row is the difference between its net worth movement and its account balances. The 17,893 in February 2026 is the largest of the scope. MP.01 traces it to the records or balance points behind it, and the RedBooks figure for the month either matches the legacy figure net of the error or is explained.
+04. **MI.04** the 2026 legacy files are dated 2026-03-29, and their April to December columns are forecast. April and May 2026 check against the account `01` reference figures and the HomeBudget balances only.
+05. **MI.05** May 2026 holds account `01` records to 2026-05-23 and account `02` seed records from 2026-05-24. Its statement covers both, so its check runs after the bridging of MI.01.
+06. **MI.06, MI.11** identical rows load as separate records, per DQ.30. The phase confirms each group is a real repeat, such as two equal fares on one day, and lists it in the report.
+07. **MI.07** the 5 foreign cash wallets fold into the SGD pooled foreign cash wallet at the month-end rates of the day before the earliest loaded phase, and the 3 small balances are written off to SC.17 loss on that phase's start date, per DQ.33 and MR.15.
+08. **MI.08** the mortgage closed by the end of 2019. The account is left out, and the report lists its stale balance, per DQ.33 item 04.
+09. **MI.09** the legacy mapping folds these categories into misc discretionary, though they act as clearing accounts. Task 12.01 decides whether each is an expense or a clearing account before the first phase that holds their rows loads.
+10. **MI.10** the two errors nearly cancel across September and October 2025, which points to one movement booked in different months on the two sides. MP.02 traces it as MI.03 traces February 2026. MP.02 also reviews the January 2025 error of -597.
+11. **MI.12** the 2023 income statement's net income differs from the balance sheet's by 1,082 in January and 5,763 in February, 6,846 for the year, and its December 2022 opening column reads -2,321 against -2,302. The pattern points to the two files coming from different versions of the legacy workbook. MP.03 picks the reference figure or a fresh export.
+12. **MI.13** all 36 sit on one USD cost center, and DQ.03 takes AccountTrans as the amount.
+13. **MI.14** the 2024 legacy reconcile error row runs from -1,574 to 1,371, and the earlier years hold smaller errors. MP.03 sets the tolerance or traces each.
+14. **MI.15** each takes its phase start point under phase rule 02, and DQ.40 sets the 2020-01-01 point if MP.03 loads 2020.
 
 ## Account mapping
 
@@ -77,12 +138,12 @@ Each HomeBudget account takes one of the account types TY.01 to TY.08 of the **f
 
 | id    | column       | value                                                 |
 | ----- | ------------ | ----------------------------------------------------- |
-| AC.01 | source       | `hb01` or `hb02`                                      |
-| AC.02 | account key  | the account's match key, MK.01 or MK.02 of the review |
-| AC.03 | account type | one of TY.01 to TY.08, or null outside net worth      |
-| AC.04 | in net worth | true or false                                         |
+| MC.01 | source       | `hb01` or `hb02`                                      |
+| MC.02 | account key  | the account's match key, MK.01 or MK.02 of the review |
+| MC.03 | account type | one of TY.01 to TY.08, or null outside net worth      |
+| MC.04 | in net worth | true or false                                         |
 
-01. **AC.03 and AC.04 agree.** An account in net worth has a type, and an account outside net worth has none.
+01. **MC.03 and MC.04 agree.** An account in net worth has a type, and an account outside net worth has none.
 02. **an account missing from the map fails the load** with its name, per 02.SEED.03 and 02.MIG.03. The loader never falls back to a default type.
 03. **the map carries real account names**, so it lives with the **review outputs**, out of version control. This doc refers to its rows by role id.
 

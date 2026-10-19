@@ -27,7 +27,7 @@ This review is design topic 04.04 in the **release milestones**. It works from t
 
 ## Summary
 
-01. **two databases, one cutoff.** Account `01` is the frozen HomeBudget database, with 11,728 expenses, 1,336 income records and 9,614 transfers from 2014. The account `01` migration loads the rows dated 2017-01-01 to 2026-05-23: 9,140 expenses, 909 income records and 7,971 transfers. Account `02` is the live HomeBudget database on the desktop, synced from the phone. On 2026-10-17 it held 460 expenses, 8 income records and 129 transfers from 2026-05-24. The two sources never share a transaction. They share accounts and categories only.
+01. **two databases, one cutoff.** Account `01` is the frozen HomeBudget database, with 11,728 expenses, 1,336 income records and 9,614 transfers from 2014. The account `01` migration loads the rows dated 2020-01-01 to 2026-05-23: 6,182 expenses, 695 income records and 5,730 transfers. Account `02` is the live HomeBudget database on the desktop, synced from the phone. On 2026-10-17 it held 460 expenses, 8 income records and 129 transfers from 2026-05-24. The two sources never share a transaction. They share accounts and categories only.
 02. **the seed loads a dated snapshot of account 02.** The account `02` database changes with every sync, so the **snapshot script** copies it into `data/` with a timestamp, and the seed loads the newest copy. Rows dated after the snapshot are recurring or future-dated entries, and the seed skips them, per DQ.01.
 03. **HomeBudget already signs balances by net worth.** Assets hold positive balances and liabilities negative ones in both databases, so balances translate without a flip. Expense amounts are positive in HomeBudget and become negative entries, per [Sign translation](#sign-translation).
 04. **every account maps to a canonical asset subcategory.** The **fs account registry** already places each account `01` account in one of the account types of the **financial statements design**, and each account `02` account takes the type of its account `01` pair or of its kind. The HomeBudget type is kept as a source attribute only, since a Credit account's balance can be positive or negative.
@@ -35,10 +35,10 @@ This review is design topic 04.04 in the **release milestones**. It works from t
 06. **every HomeBudget record carries a group-wide key.** Each row holds the key of the device that created it and that device's own row key. The pair is unique for every account `02` record, so it is the account `02` match key and survives a rebuilt desktop database, per [Upsert match keys](#upsert-match-keys).
 07. **category mapping between accounts** Every category maps to a canonical income statement line. The legacy **homebudget workbook** and **financial statements workbook** already map account `01` explicitly, and task 12.01 captures that mapping. Account `02` maps through the subcategory lines of the **financial statements design**, and confirming that mapping is the one open issue of this review, per [Open issue](#open-issue).
 08. **the cost center nets to zero for a given month** The 8 dates where the cost center does not net to zero form 4 pairs of dates one to three days apart, each a split whose records fall on two dates. The transfers out of the cost center are reimbursements, a refund, flatmate shares and deposit moves, each a transfer under AR.09.
-09. **the migration scope starts when the account 01 cost centers were reset.** The cost centers' reconciled points sit at the start of 2017, and the migration loads from 2017-01-01. Within the scope the main personal cost center is at 0.00 at 111 of 113 month ends, and every cost center is at 0.00 on the cutoff. The migration checks each cost center against its HomeBudget balance at every month end, per DQ.31.
+09. **the migration scope starts on 2020-01-01, from when every account 01 cost center holds 0.00 at every month end.** The cost centers' reconciled points sit at the start of 2017. From 2017 to 2019, five of them carried balances across 25 month ends, each held for weeks or months and cleared by one later entry. Every cost center is at 0.00 at the end of 2019-12-31 and at every month end from there to the cutoff, so CK.06 of the **financial statements design** holds for every migrated month. The migration checks each cost center against its HomeBudget balance at every month end, per DQ.31.
 10. **open reconcile gap to close: account 01 balances do not run on into account 02 openings.** For the 9 accounts held in both with a non-zero balance, the account `01` balance on 2026-05-23 differs from the account `02` opening point. Before the account `01` migration, each balance runs from its account `02` point. The migration resets the point to the last reconciled point in account `01`, mostly from February or March 2026, and the reconcile scope runs from there to the next reconciliation. Closing the gap is task 12.02, per DQ.38.
 11. **33 data quality issues, each with a rule.** 15 come from the account `02` database, 16 from the account `01` database and 2 span both. See [Data quality issues and migration rules](#data-quality-issues-and-migration-rules).
-12. **retired account 01 accounts are not migrated.** 9 account `01` accounts have no activity from 2017-01-01 to the cutoff. They are retired, and the migration leaves them out, per DQ.33. The other 60 migrate.
+12. **dormant account 01 accounts take a treatment by their balance.** 25 account `01` accounts have no activity from 2020-01-01 to the cutoff. The 16 at 0.00 are left out, the 5 foreign cash wallets fold into one SGD pooled foreign cash wallet, 3 small balances migrate and are written off, and the mortgage account, closed by the end of 2019, is left out, per DQ.33. The other 44 accounts migrate with their history.
 
 ## References
 
@@ -144,39 +144,39 @@ The **financial statements design**, topic 04.09, owns the RedBooks taxonomy: it
 
 ### Account 01 accounts
 
-The **fs account registry**, the `accounts` region of the **financial statements workbook**, already gives each account `01` account its asset subcategory, and the migration adopts it unchanged. The 60 account `01` accounts the migration carries, per DQ.33, place as follows.
+The **fs account registry**, the `accounts` region of the **financial statements workbook**, already gives each account `01` account its asset subcategory, and the migration adopts it unchanged. The 44 account `01` accounts the migration carries with their history place as follows. The dormant accounts of DQ.33 place by their own treatment.
 
 | id    | placement                                       | accounts |
 | ----- | ----------------------------------------------- | -------- |
 | M1.01 | registry account, its registry account type     | 29       |
-| M1.02 | cost center, account type clearing, TY.03       | 9        |
-| M1.03 | outside the registry and outside the statements | 22       |
+| M1.02 | cost center, account type clearing, TY.03       | 6        |
+| M1.03 | outside the registry and outside the statements | 9        |
 
 01. **M1.01** wallet cash 6, bank account 5, savings account 4, credit card 3, other credit 3, investment 5 and retirement 3, from the live `accounts` region fetched by the **fetch script**. The **fs category translation** transcribes an earlier copy with 28 rows, and the live workbook governs where the two differ.
-02. **M1.03** foreign cash wallets, gift and stored-value balances, loans, a household total account and the counterparties. The registry leaves them out, scope category 02 of the **fs account classification**. Their records migrate so the history stays whole, and they stay outside net worth.
+02. **M1.03** foreign cash wallets, gift and stored-value balances, a credit account and a counterparty. The registry leaves them out, scope category 02 of the **fs account classification**. Their records migrate so the history stays whole, and they stay outside net worth.
 
 ### Account 02 accounts
 
 Each account `02` account takes the account type of its account `01` registry pair. An account with no registry pair takes the type the **data migration** sets for its kind.
 
-| id    | role                    | cur | basis             | account type    |
-| ----- | ----------------------- | --- | ----------------- | --------------- |
-| M2.01 | main bank account       | SGD | registry pair     | bank account    |
-| M2.02 | cash wallet             | SGD | registry pair     | wallet cash     |
-| M2.03 | USD bank account        | USD | registry pair     | bank account    |
-| M2.04 | cost center             | SGD | cost center       | clearing        |
-| M2.05 | brokerage cash          | USD | TY.06             | margin credit   |
-| M2.06 | main credit card        | SGD | registry pair     | credit card     |
-| M2.07 | household share account | SGD | registry pair     | other credit    |
-| M2.08 | transit stored-value    | SGD | registry pair     | wallet cash     |
-| M2.09 | coffee stored-value     | SGD | TY.01             | wallet cash     |
-| M2.10 | utility bill account    | SGD | TY.05             | other credit    |
-| M2.11 | previous rental deposit | SGD | TY.05             | other credit    |
-| M2.12 | utility deposit         | SGD | TY.05             | other credit    |
-| M2.13 | current rental deposit  | SGD | TY.05             | other credit    |
-| M2.14 | brokerage position      | USD | registry pair     | investment      |
-| M2.15 | phone bill account      | SGD | TY.05             | other credit    |
-| M2.16 | friends receivable      | SGD | TY.05             | other credit    |
+| id    | role                    | cur | basis         | account type  |
+| ----- | ----------------------- | --- | ------------- | ------------- |
+| M2.01 | main bank account       | SGD | registry pair | bank account  |
+| M2.02 | cash wallet             | SGD | registry pair | wallet cash   |
+| M2.03 | USD bank account        | USD | registry pair | bank account  |
+| M2.04 | cost center             | SGD | cost center   | clearing      |
+| M2.05 | brokerage cash          | USD | TY.06         | margin credit |
+| M2.06 | main credit card        | SGD | registry pair | credit card   |
+| M2.07 | household share account | SGD | registry pair | other credit  |
+| M2.08 | transit stored-value    | SGD | registry pair | wallet cash   |
+| M2.09 | coffee stored-value     | SGD | TY.01         | wallet cash   |
+| M2.10 | utility bill account    | SGD | TY.05         | other credit  |
+| M2.11 | previous rental deposit | SGD | TY.05         | other credit  |
+| M2.12 | utility deposit         | SGD | TY.05         | other credit  |
+| M2.13 | current rental deposit  | SGD | TY.05         | other credit  |
+| M2.14 | brokerage position      | USD | registry pair | investment    |
+| M2.15 | phone bill account      | SGD | TY.05         | other credit  |
+| M2.16 | friends receivable      | SGD | TY.05         | other credit  |
 
 01. the HomeBudget type of each account is kept as a source attribute. A Credit account's balance can be positive or negative, and the account type alone sets its placement, per DQ.09.
 02. **M2.05** the cash of a margin brokerage account is margin credit and stays in credit at any balance, per TY.06 of the **financial statements design**. Its registry pair is a savings account, which the legacy statements placed by its sign.
@@ -202,7 +202,7 @@ The gap is the account `02` balance at the start of 2026-05-24 less the account 
 
 ## Category mapping
 
-01. **account 01** the `cat_map` region of the **homebudget workbook** maps each budget, category and subcategory to a legacy GL code, and the `fin_expense_cat_map` region of the **financial statements workbook** maps each GL code to its statement line. The **fetch script** reads both regions read-only into the **legacy mapping** outputs, and the AM table of the **data migration** transcribes the result. The `cat_map` category and subcategory pairs cover 8,574 of the 9,140 expenses in the migration scope. The other 566 fall mostly in 2017 to 2019, under the retired budget group and in travel, real estate and project subcategories the sheet never mapped, with 27 in 2026. Task 12.01 of the homebudget account 01 migrate milestone extends the mapping to them, so every pair reaches one line.
+01. **account 01** the `cat_map` region of the **homebudget workbook** maps each budget, category and subcategory to a legacy GL code, and the `fin_expense_cat_map` region of the **financial statements workbook** maps each GL code to its statement line. The **fetch script** reads both regions read-only into the **legacy mapping** outputs, and the AM table of the **data migration** transcribes the result. The `cat_map` category and subcategory pairs cover 6,155 of the 6,182 expenses in the migration scope. The other 27 are 2026 expenses on one project subcategory the sheet never mapped. Task 12.01 of the homebudget account 01 migrate milestone extends the mapping to them, so every pair reaches one line.
 02. **account 02** each of the 29 account `02` subcategories maps to the subcategory line of the same name in the SC table of the **financial statements design**, and the legacy line crosswalk of the **data migration** records the `gl_code` each mirrors. The `taxes` category is a reduction of personal income, per CR.06 of the **data migration**, and the income names map to the personal income lines PS.01 to PS.07.
 
 ### Open issue
@@ -228,41 +228,41 @@ The one open issue of this review is the account `02` mapping onto the canonical
 
 Every issue names its source, its count and the rule the seed loader or the migration applies. A row the rule skips or changes appears in the load report with the rule id. Account `02` counts are as of 2026-10-17.
 
-| id    | source | issue                                                      | count    |
-| ----- | ------ | ---------------------------------------------------------- | -------- |
-| DQ.01 | 02     | rows dated after the snapshot                              | 24       |
-| DQ.02 | 02     | transfers with no account, before 2026-05-24               | 13       |
-| DQ.03 | 02     | `Expense.amount` differs from the posted amount            | 8        |
-| DQ.04 | 02     | foreign currency expenses on SGD accounts                  | 5        |
-| DQ.05 | 02     | transfers between currencies                               | 3        |
-| DQ.06 | 02     | identical expenses on one day                              | 3 pairs  |
-| DQ.07 | 02     | negative expense amounts                                   | 2        |
-| DQ.08 | 02     | blank payee or notes fields                                | 349      |
-| DQ.09 | 02     | HomeBudget type differs from the canonical subcategory     | 4        |
-| DQ.10 | 02     | account 02 points that the migration replaces              | 10       |
-| DQ.11 | 02     | deposit account negative for 7 days                        | 1        |
-| DQ.12 | 02     | investment sale booked as a plain transfer                 | 1        |
-| DQ.13 | 02     | card rebate booked on the bank, then moved to the card     | 1        |
-| DQ.14 | 02     | splits whose records fall on two dates                     | 4        |
-| DQ.16 | 02     | category with no subcategories                             | 1        |
-| DQ.20 | 01     | rows outside the 2017-01-01 to 2026-05-23 scope            | 4,658    |
-| DQ.22 | 01     | `Expense.amount` differs from the posted amount            | 173      |
-| DQ.23 | 01     | foreign currency expenses on SGD accounts                  | 989      |
-| DQ.24 | 01     | transfers between currencies                               | 579      |
-| DQ.26 | 01     | zero-amount expense                                        | 1        |
-| DQ.27 | 01     | negative expense amounts                                   | 387      |
-| DQ.28 | 01     | negative income amounts                                    | 175      |
-| DQ.29 | 01     | negative transfer amount                                   | 1        |
-| DQ.30 | 01     | identical rows on one day                                  | 36       |
-| DQ.31 | 01     | cost centers not at zero at a month end                    | 5        |
-| DQ.32 | 01     | expenses paid directly from a non cost center account      | 1,164    |
-| DQ.33 | 01     | retired accounts with no activity in the scope             | 9        |
-| DQ.35 | 01     | subcategories with no expense in the scope                 | 30       |
-| DQ.36 | both   | settings table holds the user's email and app password     | 2        |
-| DQ.37 | 01     | wrapper list calls drop rows and return `Expense.amount`   | 73       |
-| DQ.38 | both   | account 01 balance differs from the account 02 opening     | 9        |
-| DQ.39 | 01     | accounts outside HomeBudget net worth, active in the scope | 5        |
-| DQ.40 | 01     | migrated accounts whose point predates the scope           | 8        |
+| id    | source | issue                                                      | count   |
+| ----- | ------ | ---------------------------------------------------------- | ------- |
+| DQ.01 | 02     | rows dated after the snapshot                              | 24      |
+| DQ.02 | 02     | transfers with no account, before 2026-05-24               | 13      |
+| DQ.03 | 02     | `Expense.amount` differs from the posted amount            | 8       |
+| DQ.04 | 02     | foreign currency expenses on SGD accounts                  | 5       |
+| DQ.05 | 02     | transfers between currencies                               | 3       |
+| DQ.06 | 02     | identical expenses on one day                              | 3 pairs |
+| DQ.07 | 02     | negative expense amounts                                   | 2       |
+| DQ.08 | 02     | blank payee or notes fields                                | 349     |
+| DQ.09 | 02     | HomeBudget type differs from the canonical subcategory     | 4       |
+| DQ.10 | 02     | account 02 points that the migration replaces              | 10      |
+| DQ.11 | 02     | deposit account negative for 7 days                        | 1       |
+| DQ.12 | 02     | investment sale booked as a plain transfer                 | 1       |
+| DQ.13 | 02     | card rebate booked on the bank, then moved to the card     | 1       |
+| DQ.14 | 02     | splits whose records fall on two dates                     | 4       |
+| DQ.16 | 02     | category with no subcategories                             | 1       |
+| DQ.20 | 01     | rows outside the 2020-01-01 to 2026-05-23 scope            | 10,071  |
+| DQ.22 | 01     | `Expense.amount` differs from the posted amount            | 36      |
+| DQ.23 | 01     | foreign currency expenses on SGD accounts                  | 668     |
+| DQ.24 | 01     | transfers between currencies                               | 324     |
+| DQ.26 | 01     | zero-amount expense                                        | 0       |
+| DQ.27 | 01     | negative expense amounts                                   | 259     |
+| DQ.28 | 01     | negative income amounts                                    | 155     |
+| DQ.29 | 01     | negative transfer amount                                   | 0       |
+| DQ.30 | 01     | identical rows on one day                                  | 26      |
+| DQ.31 | 01     | cost centers not at zero at a month end                    | 0       |
+| DQ.32 | 01     | expenses paid directly from a non cost center account      | 252     |
+| DQ.33 | 01     | dormant accounts with no activity in the scope             | 25      |
+| DQ.35 | 01     | subcategories with no expense in the scope                 | 72      |
+| DQ.36 | both   | settings table holds the user's email and app password     | 2       |
+| DQ.37 | 01     | wrapper list calls drop rows and return `Expense.amount`   | 73      |
+| DQ.38 | both   | account 01 balance differs from the account 02 opening     | 9       |
+| DQ.39 | 01     | accounts outside HomeBudget net worth, active in the scope | 1       |
+| DQ.40 | 01     | migrated accounts whose point predates the scope           | 11      |
 
 01. **DQ.01** load only rows dated on or before the snapshot date. The 22 expenses and 2 transfers dated later on 2026-10-17 come from 6 recurring templates and future-dated entries. A later snapshot picks each up once its date has passed.
 02. **DQ.02** 13 transfers dated 2026-05-09 to 2026-05-17 name no sending or receiving account. They have no AccountTrans rows and change no balance. Skip them and list them in the report.
@@ -279,24 +279,28 @@ Every issue names its source, its count and the rule the seed loader or the migr
 13. **DQ.13** load both records as-is. Net worth is the same as income landing on the card.
 14. **DQ.14** the cost center check for account `02` runs per split and allows its records to span up to three days.
 15. **DQ.16** load the `insurance` category with no subcategories. The account `01` mapping adds its health line, SC.18 of the **financial statements design**.
-16. **DQ.20** load only rows dated 2017-01-01 to 2026-05-23. The 4,355 rows dated earlier predate the cost center reset of 2017, and they hold every row with no account and every split, so neither issue reaches the migration. The 303 rows dated after the cutoff are recurring and future-dated entries created before it, and account `02` holds the real records for those dates. The report counts both groups as skipped by DQ.20.
-17. **DQ.22** the rule of DQ.03 applies. On 173 expenses in the scope, mostly on USD accounts and USD cost centers, `Expense.amount` holds a SGD conversion and AccountTrans holds the amount in the account's currency.
+16. **DQ.20** load only rows dated 2020-01-01 to 2026-05-23. The 9,768 rows dated earlier hold the cost center balances of DQ.31, every row with no account and every split, so none of these issues reaches the migration. The 303 rows dated after the cutoff are recurring and future-dated entries created before it, and account `02` holds the real records for those dates. The report counts both groups as skipped by DQ.20.
+17. **DQ.22** the rule of DQ.03 applies. On 36 expenses in the scope, all on one USD cost center, `Expense.amount` holds a SGD conversion and AccountTrans holds the amount in the account's currency.
 18. **DQ.23** the rule of DQ.04 applies.
 19. **DQ.24** the rule of DQ.05 applies.
-20. **DQ.26** skip it and list it in the report. RedBooks requires a non-zero amount.
+20. **DQ.26** no zero-amount expense falls in the scope. A rerun on a changed database skips any such row and lists it in the report, since RedBooks requires a non-zero amount.
 21. **DQ.27** load as refunds, per ST.02.
 22. **DQ.28** load as negative income entries, per ST.04. Most are capital losses and losses on positions. Moving them to loss accounts under AR.13 belongs to the accounts topic, 04.06.
-23. **DQ.29** load the one negative transfer as a positive transfer in the reverse direction.
-24. **DQ.30** 14 expense rows in 7 groups and 22 transfer rows in 11 groups are identical. Load each as its own record, per 02.MIG.06.
-25. **DQ.31** after their reconciled points at the start of 2017, five cost centers miss 0.00 at a few month ends: the main personal one at 2 of 113, a household one at 7 of 32, and three others at 2 each. Every cost center is at 0.00 on the cutoff. Load as-is. The migration check compares each cost center's balance with HomeBudget's at every month end, per 02.MIG.08.
-26. **DQ.32** until 2021 several accounts paid expenses directly, mostly a shared household account. Load them as direct expenses under AR.05.
-27. **DQ.33** do not migrate them. No row in the scope references them, so leaving them out orphans no record. Three hold small balances at the cutoff, among them the one negative foreign cash wallet, and the review outputs list them.
+23. **DQ.29** no negative transfer falls in the scope. A rerun on a changed database loads any such row as a positive transfer in the reverse direction.
+24. **DQ.30** 8 expense rows in 4 groups and 18 transfer rows in 9 groups are identical. Load each as its own record, per 02.MIG.06.
+25. **DQ.31** every account `01` cost center holds 0.00 at the end of 2019-12-31 and at every month end in the scope. From 2017 to 2019, five cost centers carried balances across 25 month ends, which sets the scope start of DQ.20. The migration check compares each cost center's balance with HomeBudget's at every month end, per 02.MIG.08.
+26. **DQ.32** until 2021-08 two household accounts paid 252 expenses in the scope directly, most of them a shared household account. Load them as direct expenses under AR.05.
+27. **DQ.33** no row in the scope references a dormant account, so its balance at the end of 2019-12-31 is its balance at the cutoff, and that balance sets its treatment. The review outputs list each account.
+    01. **zero balance**, 16 accounts. Do not migrate them. Leaving them out orphans no record.
+    02. **foreign cash wallets**, 5 accounts in THB, HKD, INR, MXN and KRW, the INR one negative. Migrate none of them. One new SGD `wallet cash` account, the pooled foreign cash wallet, takes their sum: each balance converts to SGD at its 2019-12-31 month-end rate, and the sum is the wallet's reconciled point on 2020-01-01. Its match key is `hb01:Account:pooled-foreign-cash`, and the report lists each currency's balance, rate and SGD value.
+    03. **small balances**, 3 accounts: a USD and a SGD stored-value wallet and a USD student loan of 0.31. Migrate each with its balance as its reconciled point on 2020-01-01, post a write-off expense on SC.17 loss dated 2020-01-01 that brings it to 0.00, and retire it.
+    04. **mortgage account**, 1 USD credit account at +4,205.42. The mortgage closed by the end of 2019, before the scope, so the balance is a stale HomeBudget figure, and no legacy balance sheet from 2020 on counts it. Do not migrate it. The report lists it with its stale balance.
 28. **DQ.35** do not migrate them.
 29. **DQ.36** no script reads the settings table of either database, and no snapshot consumer or fixture copies it.
 30. **DQ.37** the seed and the migration read each database with SQL. The wrapper's `get_account_balance` serves as an independent cross-check of the balances. The 73 rows the list calls drop all fall before the scope.
 31. **DQ.38** before the account `01` migration, each paired account's balance runs from its account `02` point, as the seed loads it. At the start of the migration, each paired account's reconciled point resets to its last reconciled point in account `01`, mostly dated February or March 2026, and the account `02` point is dropped. The balance then runs from that point through the account `01` history to the cutoff and on through the account `02` records. The reconcile scope runs from that point to the next reconciliation, such as one in November 2026, which settles the difference. Bridging the two accounts at the cutoff is task 12.02 of the homebudget account 01 migrate milestone.
-32. **DQ.39** two loans and three counterparties carry `includeAccount = 'N'` and have activity in the scope. Load the loans as liabilities and the counterparties as accounts outside net worth.
-33. **DQ.40** give each such account a reconciled point on 2017-01-01 equal to its HomeBudget balance at the end of 2016-12-31, per AR.10 and AR.11. The review outputs hold each opening figure.
+32. **DQ.39** one counterparty carries `includeAccount = 'N'` and has activity in the scope. Load it as an account outside net worth.
+33. **DQ.40** give each such account a reconciled point on 2020-01-01 equal to its HomeBudget balance at the end of 2019-12-31, per AR.10 and AR.11. The review outputs hold each opening figure.
 
 
 ## Upsert match keys
@@ -317,12 +321,12 @@ The seed and the migration both upsert: a record that matches an existing one by
 
 ## Account 01 reference figures
 
-The **review script** writes these figures to the **review outputs**, and 02.MIG.09 checks the migrated user against them. Each figure covers the migration scope, 2017-01-01 to 2026-05-23, and is computed from AccountTrans and the reconciled balance points. The cutoff balances match the **homebudget wrapper** for all 69 accounts.
+The **review script** writes these figures to the **review outputs**, and 02.MIG.09 checks the migrated user against them. Each figure covers the migration scope, 2020-01-01 to 2026-05-23, and is computed from AccountTrans and the reconciled balance points. The cutoff balances match the **homebudget wrapper** for all 69 accounts.
 
-01. **record counts in the scope**: 9,140 expenses, 909 income records and 7,971 transfers. With the skip of DQ.26, the migration loads 9,139 expenses, every income record and every transfer.
-02. **opening balances**: one signed balance per migrated account at the end of 2016-12-31, the opening point DQ.40 sets where an account's own point predates the scope.
-03. **balances on 2026-05-23**: one signed balance per account in its own currency, for the 60 migrated accounts and the 9 retired ones.
-04. **category totals**: 564 rows of posted expense totals, one per year, account `01` category, subcategory and account currency, from 2017 to 2026.
+01. **record counts in the scope**: 6,182 expenses, 695 income records and 5,730 transfers. The migration loads every one of them, and adds the opening points and write-offs of DQ.33.
+02. **opening balances**: one signed balance per migrated account at the end of 2019-12-31, the opening point DQ.40 sets where an account's own point predates the scope.
+03. **balances on 2026-05-23**: one signed balance per account in its own currency, for the 44 migrated accounts and the 25 dormant ones.
+04. **category totals**: 344 rows of posted expense totals, one per year, account `01` category, subcategory and account currency, from 2020 to 2026.
 05. **data quality counts**: one count per account `01` issue, so a rerun on a changed database shows which issue moved.
 
 ## Edge cases added to the case catalogue

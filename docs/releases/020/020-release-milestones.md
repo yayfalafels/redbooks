@@ -88,17 +88,17 @@ The requirements milestone sets what `0.2.0` delivers and why. It records the le
 
 **tasks**
 
-| id    | seq | status   | task                                     |
-| ----- | --- | -------  | ---------------------------------------- |
-| 01.01 | 01  | closed   | lessons from past attempts               |
-| 01.02 | 02  | closed   | release roadmap                          |
-| 01.03 | 03  | closed   | release milestones inventory             |
-| 01.04 | 04  | closed   | requirements audit issues                |
-| 01.05 | 05  | closed   | apply requirements to release notes      |
-| 01.06 | 06  | closed   | homebudget snapshot                      |
-| 01.07 | 07  | closed   | release notes review                     |
-| 01.09 | 08  | closed   | homebudget balances snapshot             |
-| 01.08 | 09  | closed   | deliverables and closing criteria        |
+| id    | seq | status | task                                |
+| ----- | --- | ------ | ----------------------------------- |
+| 01.01 | 01  | closed | lessons from past attempts          |
+| 01.02 | 02  | closed | release roadmap                     |
+| 01.03 | 03  | closed | release milestones inventory        |
+| 01.04 | 04  | closed | requirements audit issues           |
+| 01.05 | 05  | closed | apply requirements to release notes |
+| 01.06 | 06  | closed | homebudget snapshot                 |
+| 01.07 | 07  | closed | release notes review                |
+| 01.09 | 08  | closed | homebudget balances snapshot        |
+| 01.08 | 09  | closed | deliverables and closing criteria   |
 
 __01.04 (closed) requirement audit__
 
@@ -106,18 +106,18 @@ This audit reviews the planned scope and the milestone sequence for 0.2.0. It dr
 
 _audit issues_
 
-| id       | status   | severity | title                                              |
-| -------- | -------- | -------- | -------------------------------------------------- |
-| 01.04.01 | closed   | high     | scope is wider than an mvp                         |
-| 01.04.02 | closed   | high     | deployment target contradicts itself               |
-| 01.04.03 | closed   | high     | accounting model is the unmade central decision    |
-| 01.04.04 | closed   | high     | balance sheet accuracy has no check until 0.3.0    |
-| 01.04.05 | closed   | medium   | mobile capture is unreachable from a local deploy  |
-| 01.04.06 | closed   | medium   | data migration comes too late in the sequence      |
-| 01.04.07 | closed   | medium   | multi-currency rules are unspecified               |
-| 01.04.08 | closed   | medium   | eight milestones pass before the first feature     |
-| 01.04.09 | closed   | low      | agents and skills still describe easyMCF           |
-| 01.04.10 | closed   | low      | learning is captured only at the end               |
+| id       | status | severity | title                                             |
+| -------- | ------ | -------- | ------------------------------------------------- |
+| 01.04.01 | closed | high     | scope is wider than an mvp                        |
+| 01.04.02 | closed | high     | deployment target contradicts itself              |
+| 01.04.03 | closed | high     | accounting model is the unmade central decision   |
+| 01.04.04 | closed | high     | balance sheet accuracy has no check until 0.3.0   |
+| 01.04.05 | closed | medium   | mobile capture is unreachable from a local deploy |
+| 01.04.06 | closed | medium   | data migration comes too late in the sequence     |
+| 01.04.07 | closed | medium   | multi-currency rules are unspecified              |
+| 01.04.08 | closed | medium   | eight milestones pass before the first feature    |
+| 01.04.09 | closed | low      | agents and skills still describe easyMCF          |
+| 01.04.10 | closed | low      | learning is captured only at the end              |
 
 _01.04.01 (closed) scope is wider than an mvp_
 
@@ -392,29 +392,29 @@ Every design doc traces its decisions back to the requirements and forward to th
 
 The status of each design topic lives in the **design tracker**, which this table does not repeat.
 
-| id    | seq | design topic                             |
-| ----- | --- | ---------------------------------------- |
-| 04.21 | 01  | accounting rules                         |
-| 04.09 | 02  | financial statements                     |
-| 04.04 | 03  | homebudget data review                   |
-| 04.01 | 04  | workflows                                |
-| 04.02 | 05  | data flows                               |
-| 04.03 | 06  | front end pages                          |
-| 04.05 | 07  | data model                               |
-| 04.06 | 08  | accounts                                 |
-| 04.07 | 09  | transactions                             |
-| 04.19 | 10  | exchange rate api probe                  |
-| 04.08 | 11  | multi currency and forex                 |
-| 04.10 | 12  | architecture                             |
-| 04.11 | 13  | tech stack                               |
-| 04.12 | 14  | repo layout                              |
-| 04.13 | 15  | users and authentication                 |
-| 04.14 | 16  | networking and security                  |
-| 04.15 | 17  | api endpoints                            |
-| 04.16 | 18  | local dev env                            |
-| 04.17 | 19  | env variables                            |
-| 04.18 | 20  | docs publishing pipeline                 |
-| 04.20 | 21  | design audit                             |
+| id    | seq | design topic             |
+| ----- | --- | ------------------------ |
+| 04.21 | 01  | accounting rules         |
+| 04.09 | 02  | financial statements     |
+| 04.04 | 03  | homebudget data review   |
+| 04.01 | 04  | workflows                |
+| 04.02 | 05  | data flows               |
+| 04.03 | 06  | front end pages          |
+| 04.05 | 07  | data model               |
+| 04.06 | 08  | accounts                 |
+| 04.07 | 09  | transactions             |
+| 04.19 | 10  | exchange rate api probe  |
+| 04.08 | 11  | multi currency and forex |
+| 04.10 | 12  | architecture             |
+| 04.11 | 13  | tech stack               |
+| 04.12 | 14  | repo layout              |
+| 04.13 | 15  | users and authentication |
+| 04.14 | 16  | networking and security  |
+| 04.15 | 17  | api endpoints            |
+| 04.16 | 18  | local dev env            |
+| 04.17 | 19  | env variables            |
+| 04.18 | 20  | docs publishing pipeline |
+| 04.20 | 21  | design audit             |
 
 __04.20 (open) design audit__
 
@@ -422,23 +422,23 @@ This audit checks the design and planning documents against one another, with th
 
 _audit issues_
 
-| id       | status | severity | title                                                   |
-| -------- | ------ | -------- | ------------------------------------------------------- |
-| 04.20.01 | closed | high     | one cost center per currency meets nine migrated ones   |
-| 04.20.02 | closed | high     | the opening balance is defined two ways                 |
-| 04.20.03 | closed | high     | the split model is stated three ways                    |
-| 04.20.04 | closed | high     | test oracles predate the month-end rate basis           |
-| 04.20.05 | open   | high     | design topic status disagrees with content              |
-| 04.20.06 | open   | medium   | the changes page misses writes before the point         |
-| 04.20.07 | closed | medium   | closed vocabularies cannot be seeded from account 02    |
-| 04.20.08 | closed | medium   | the prior month-end rate is an unstated deviation       |
-| 04.20.09 | open   | medium   | the data model doc is an easyMCF stub                   |
-| 04.20.10 | closed | medium   | milestone criteria lag the design                       |
-| 04.20.11 | closed | medium   | accounting rules decisions list is stale                |
-| 04.20.12 | closed | medium   | new workflows have no catalogue cases                   |
-| 04.20.13 | open   | low      | small id and reference slips in the design docs         |
-| 04.20.14 | open   | low      | front end pages lag a few workflow steps                |
-| 04.20.15 | open   | low      | table and example defects in the statements design      |
+| id       | status | severity | title                                                 |
+| -------- | ------ | -------- | ----------------------------------------------------- |
+| 04.20.01 | closed | high     | one cost center per currency meets nine migrated ones |
+| 04.20.02 | closed | high     | the opening balance is defined two ways               |
+| 04.20.03 | closed | high     | the split model is stated three ways                  |
+| 04.20.04 | closed | high     | test oracles predate the month-end rate basis         |
+| 04.20.05 | open   | high     | design topic status disagrees with content            |
+| 04.20.06 | closed | medium   | the changes page misses writes before the point       |
+| 04.20.07 | closed | medium   | closed vocabularies cannot be seeded from account 02  |
+| 04.20.08 | closed | medium   | the prior month-end rate is an unstated deviation     |
+| 04.20.09 | open   | medium   | the data model doc is an easyMCF stub                 |
+| 04.20.10 | closed | medium   | milestone criteria lag the design                     |
+| 04.20.11 | closed | medium   | accounting rules decisions list is stale              |
+| 04.20.12 | closed | medium   | new workflows have no catalogue cases                 |
+| 04.20.13 | open   | low      | small id and reference slips in the design docs       |
+| 04.20.14 | open   | low      | front end pages lag a few workflow steps              |
+| 04.20.15 | open   | low      | table and example defects in the statements design    |
 
 _04.20.01 (closed) one cost center per currency meets nine migrated ones_
 
@@ -475,7 +475,10 @@ _04.20.05 (open) design topic status disagrees with content_
 
 This table marks 04.19 accounting rules, 04.09, 04.04 and 04.01 closed, while the design tracker marks 04.09 open, the rest pending and has no accounting rules row. 04.19 also names both accounting rules and the exchange rate API probe. 04.04 is closed with its open issue and 02.OD.07 still open, and 04.09 is closed with handoffs HO.01 to HO.05 unconfirmed and 02.FS.01 still lacking sections. Recommendation: give accounting rules its own id, keep one status list in the design tracker, and close or reopen 04.04 and 04.09 against their open items.
 
-_04.20.06 (open) the changes page misses writes before the point_
+_04.20.06 (closed) the changes page misses writes before the point_
+
+>RESPONSE
+>each change log row lists the snapshot versions it touches, by statement, in `income_version_ids` and `balance_version_ids`, and the changes page reads the rows that list its version, per `change_log` note 02 of the data model and DF.17.
 
 DF.17 marks a balance sheet stale for a write dated before its account's point and after the month end, but the changes page reads only rows dated on or before the month end, per DF.17, WF.16.03 and PG.30. Such a month shows stale with no change listed. Recommendation: link each change log row to the snapshots it marked, and list by that link.
 
@@ -717,7 +720,7 @@ This milestone builds the ledger and transaction entry. Every account keeps its 
 
 The schema holds accounts with their type, in net worth setting, currency and reconciled balance point, the two-level consolidated category model of categories with their statement section and their subcategories, the general ledger entries, the expense, income, transfer and split records built on them, split templates, and tags. Amounts use exact decimal column types, and each account's currency references one of the user's currencies in the currency model.
 
-01. the account, category, subcategory, ledger entry, expense, income, transfer, split, split template and tag tables exist with their keys and constraints, per the data model design.
+01. the account, category, subcategory, ledger entry (`txn`), expense, income, transfer, split, split template and tag tables exist with their keys and constraints, per the data model design.
 02. every subcategory belongs to exactly one category, and every expense and income record references one subcategory.
 03. every expense and income record references exactly one ledger entry, and every transfer references two ledger entries on two different accounts.
 04. every expense and income record stores its entered currency, entered amount and exchange rate. When the entered currency is the account's currency, the rate is 1 and the ledger amount equals the entered amount.
@@ -780,7 +783,7 @@ Statements are built from the ledger, the category model, a reporting currency a
 
 01. every account type maps to one balance sheet group, per the data model design.
 02. the stored exchange rates cover every month-end date the seed data statements need.
-03. each snapshot version belongs to the series of its user, month and reporting currency, and is unique by its series and valid from time, with its version number, run kind, run time, valid from and valid to times, and stale flags for each statement. A partial unique index allows one current version per series.
+03. each snapshot version belongs to the series of its user, month and reporting currency, and is unique by its series and valid from time, with its run kind, run time, valid from and valid to times, and stale flags for each statement. A partial unique index allows one current version per series.
 04. each snapshot stores every line of both statements, the forex gain or loss, net worth and the rates it used, as exact decimals.
 05. every ledger, rate, reconciled balance point, account, category and split write records a change log row with its before and after values in the same database transaction.
 
@@ -796,16 +799,16 @@ The endpoints return the income statement and the balance sheet for a year, with
 06. the forex gain or loss line matches its expected value for each month with USD balances.
 07. changing the reporting currency on the currencies page converts every statement line on the rate basis of the financial statements design, entries at the month-end rate of the month before and balances at their own month end, with the user's recorded rates in place of fetched ones where they exist.
 08. each transfer between currencies keeps its own stored amounts in the ledger, and the statements convert account balances with the currency model's rates.
-09. the drill down for every month view line returns exactly the transactions that sum to that line.
+09. the drill down for every transaction-based month view line returns exactly the transactions that sum to that line, and an account line opens the account's ledger for the month.
 10. each CSV export holds the same values as the matching view or transaction list response. A closed month's export carries the snapshot values and its version time.
 11. each statement labels its population and period, and its source: the snapshot version and run time, or month to date for the incomplete current period.
 12. the snapshot job generates each closed month with no snapshot once, in the user's timezone and current reporting currency, at backend start and every hour, catching up every month missed while the app was down. Each run reaches a terminal status with its original exception recorded on failure.
 13. a closed month reads its current snapshot version, and the month to date run is built on request and never stored.
 14. a re-run stores a new version that becomes current, closes the version before it with its valid to time, and leaves every older version retrievable unchanged.
-15. a write dated in a month marks that month's income statement snapshot stale. It marks the balance sheet snapshots by where it falls against its account's reconciled balance point: the month of a write after the point and every later month, or every month that ends before the date of a write before the point. A month-end rate change marks the balance sheets of its month and every later month and the income statements of its month and the next. A stale view returns each line's snapshot amount, current amount and difference, and the changes endpoint returns every change log row since the snapshot ran that the month's statements include.
+15. a write dated in a month marks that month's income statement snapshot stale. It marks the balance sheet snapshots by where it falls against its account's reconciled balance point: the month of a write after the point and every later month, or every month that ends before the date of a write before the point. A month-end rate change marks the balance sheets of its month and every later month and the income statements of its month and the next. A write on an account in a currency other than the reporting currency also marks the income statement wherever it marks the balance sheet, since the forex gain or loss follows the balances. A stale view returns each line's snapshot amount, current amount and difference, and the changes endpoint returns every change log row that marked or touched the snapshot, by statement.
 16. a reporting currency change regenerates every closed month of the years the user checks, and always the current year, in the new currency. Snapshots in the old currency stay current for their own currency and stay retrievable.
 17. the history returns every snapshot grouped by year, then by reporting currency where a year holds more than one, then by month, with each month's current version, version count and stale flags.
-18. the seed load and the account `01` migration generate a snapshot for every month they load, and the reference checks compare those snapshots with the HomeBudget reference figures.
+18. the seed load and the account `01` migration generate a snapshot for every month they load and re-run every month they leave stale, and the reference checks compare those snapshots' account balances, in each account's currency, and the ledger's subcategory totals with the HomeBudget reference figures.
 
 **front end pages and behaviors**
 
@@ -828,7 +831,7 @@ The pages show the year view and the month view of the income statement and the 
 
 ## Homebudget account 01 migrate
 
-This milestone migrates the user's HomeBudget account `01` history into their working RedBooks database. The account `02` snapshot is already the seed, so this milestone carries the older history that account `02` does not hold. It starts only after every feature milestone is validated and tested, so the large account `01` data is migrated as few times as possible. Its first task adopts versioned forward migrations, so the working database keeps its data across every later schema change. The migration loads the account `01` rows dated 2017-01-01 to 2026-05-23, from the reset of the account `01` cost centers to the last day of account `01`, and leaves out the retired accounts that have no activity in that scope. It maps the account `01` legacy categories onto the income statement lines through the explicit mapping of the legacy HomeBudget and financial statements workbooks, and keeps the account `01` cost center clearing history, per AR.07 of the **accounting rules**. At its start, each account held in both accounts resets its reconciled point to its last account `01` point, and the reconcile scope runs from that point to the next reconciliation. The load uses upsert logic: it matches each account, category, transaction and transfer against what the user already holds by the match key from the HomeBudget data review, adds the records that are new, and skips the records already present. Identical transactions on the same day are separate records, each with its own key. The migration writes into the user's working database only with a second opt-in, after a backup, and checks its results against the reference figures the HomeBudget data review sets for account `01`.
+This milestone migrates the user's HomeBudget account `01` history into their working RedBooks database. The account `02` snapshot is already the seed, so this milestone carries the older history that account `02` does not hold. It starts only after every feature milestone is validated and tested, so the large account `01` data is migrated as few times as possible. Its first task adopts versioned forward migrations, so the working database keeps its data across every later schema change. The migration loads the account `01` rows dated 2020-01-01 to 2026-05-23, from the first date every account `01` cost center holds 0.00 at every month end to the last day of account `01`. Each account with no activity in that scope takes the treatment its balance sets: left out at zero, folded into a pooled foreign cash wallet, or written off. The migration runs newest year first: it migrates and reconciles 2026, then 2025, and how 2020 to 2024 load is decided after 2025 closes, per the migration phases and the irregularities inventory of the data migration design. It maps the account `01` legacy categories onto the income statement lines through the explicit mapping of the legacy HomeBudget and financial statements workbooks, and keeps the account `01` cost center clearing history, per AR.07 of the **accounting rules**. At its start, each account held in both accounts resets its reconciled point to its last account `01` point, and the reconcile scope runs from that point to the next reconciliation. The load uses upsert logic: it matches each account, category, transaction and transfer against what the user already holds by the match key from the HomeBudget data review, adds the records that are new, and skips the records already present. Identical transactions on the same day are separate records, each with its own key. The migration writes into the user's working database only with a second opt-in, after a backup, and checks its results against the reference figures the HomeBudget data review sets for account `01`.
 
 **closure criteria**
 
@@ -842,20 +845,26 @@ This milestone migrates the user's HomeBudget account `01` history into their wo
 08. the account `01` cost centers of each currency map onto the one cost center of that currency, and the migrated cost center matches the sum of their HomeBudget balances at every month end in the scope.
 09. migrated balances and category totals match the account `01` reference figures, checked by the validation utilities.
 10. the migration job reaches a terminal status with its original exception recorded on failure, and commits its progress as it goes.
-11. the migration loads only rows dated 2017-01-01 to 2026-05-23, and no retired account.
+11. the migration loads only rows dated 2020-01-01 to 2026-05-23, phase by phase from 2026 back, and treats each account with no activity in that scope by its balance, per DQ.33 of the HomeBudget data review. Each phase closes only when every irregularity of its years in the inventory is resolved and its checks against the legacy statements pass.
 12. each account held in both accounts carries its last account `01` reconciled point after the migration, and its balance from that point to the next reconciliation is reported as the open reconcile scope.
 
 **tasks**
 
-| id    | seq | status  | task                                                   |
-| ----- | --- | ------- | ------------------------------------------------------ |
-| 12.01 | 01  | pending | account 01 category mapping from the legacy workbooks  |
-| 12.02 | 02  | pending | reconcile bridging between account 01 and account 02   |
-| 12.03 | 03  | pending | account 01 cost centers onto one per currency          |
+| id    | seq | status  | task                                                  |
+| ----- | --- | ------- | ----------------------------------------------------- |
+| 12.01 | 01  | pending | account 01 category mapping from the legacy workbooks |
+| 12.02 | 02  | pending | reconcile bridging between account 01 and account 02  |
+| 12.03 | 03  | pending | account 01 cost centers onto one per currency         |
+| 12.04 | 04  | pending | migrate and reconcile 2026, phase MP.01               |
+| 12.05 | 05  | pending | migrate and reconcile 2025, phase MP.02               |
+| 12.06 | 06  | pending | decide how 2020 to 2024 load, phase MP.03             |
 
 01. **12.01** capture the `cat_map` region of the HomeBudget workbook and the `fin_expense_cat_map` region of the financial statements workbook, whose ids are in `data/gsheets.json`, so every account `01` pair in the scope reaches its line, and settle whether the balancing and reimbursable categories are expense categories or clearing accounts.
 02. **12.02** reset each account held in both accounts to its last account `01` reconciled point, mostly from February or March 2026, and carry the difference to the account `02` records through the reconcile scope until the next reconciliation settles it.
 03. **12.03** map the account `01` cost centers of each currency onto the user's one cost center of that currency, per AR.07 item 06, so new splits and migrated clearing history share it, and check the merged cost center against the sum of the HomeBudget cost center balances at every month end.
+04. **12.04** load phase MP.01, the 2026 rows to the cutoff, resolve the MP.01 irregularities MI.01 to MI.09 of the data migration inventory, and pass the phase checks against the legacy 2026 statements and the account `01` reference figures.
+05. **12.05** load phase MP.02, the 2025 rows, resolve MI.09 to MI.11, and pass the phase checks against the legacy 2025 statements.
+06. **12.06** decide how 2020 to 2024 load, phase MP.03, with MI.12 to MI.15 in view.
 
 ## Audit skills promote learning
 

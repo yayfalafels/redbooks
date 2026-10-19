@@ -28,9 +28,9 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 OUT_DIR = REPO / "data" / "homebudget-data-review"
-SCOPE_START = "2017-01-01"
+SCOPE_START = "2020-01-01"
 CUTOFF = "2026-05-23"
-DAY_BEFORE_SCOPE = "2016-12-31"
+DAY_BEFORE_SCOPE = "2019-12-31"
 CENT = Decimal("0.01")
 # AccountTrans.transType: 0 opening, 1 expense, 2 income, 3 transfer out, 4 transfer in
 SIGN = {1: -1, 2: 1, 3: -1, 4: 1}
